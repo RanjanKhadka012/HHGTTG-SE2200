@@ -1,0 +1,13 @@
+{
+  "name": "hhgttg-se2200",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start:backend": "node backend/server.js",
+    "start:frontend": "npx http-server ./frontend -p 8080",
+    "start": "concurrently \"npm: start:backend\" \"npm: start:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}

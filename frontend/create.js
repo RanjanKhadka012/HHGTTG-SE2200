@@ -25,7 +25,7 @@
         window.location.href = 'index.html';
         return;
       }
-      // If server responded but not ok, we fall back to local save below
+      //error
     }catch(e){
       console.warn('Backend not reachable, will save locally', e);
     }

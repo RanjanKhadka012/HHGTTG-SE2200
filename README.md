@@ -42,8 +42,7 @@ Quick ways to serve the frontend (from project root):
 
 ```powershell
 npx http-server ./frontend -p 8080
-# then open http://localhost:8080 in your browser
-```
+
 
 2) Or use the Node `serve` package:
 

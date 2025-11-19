@@ -25,6 +25,19 @@ The server listens on port 3000 by default and exposes a small API:
 - DELETE /api/events/:id — delete an event
 - POST /api/next-occurrences — compute occurrences from an rrule
 
+Deployment notes (Railway)
+--------------------------
+This backend can run on Railway or similar PaaS providers. To deploy on Railway:
+
+1. Set the `DATABASE_URL` environment variable (Railway will provide a Postgres URL) if you want persistent storage. If `DATABASE_URL` is not provided the server will fall back to an in-memory store (data lost on restart).
+
+2. Set `FRONTEND_URL` (optional) to the URL where your frontend is hosted (for example: `https://hhgttg-se-2200.vercel.app`). By default the server will allow `https://hhgttg-se-2200.vercel.app`.
+
+3. Railway will run `npm start` by default (Procfile present). The server will automatically create the `events` table on first start if `DATABASE_URL` is present.
+
+Limitations
+- Reminder scheduling uses in-memory timers (setTimeout). On a multi-instance or ephemeral environment this is not reliable — use a persistent job queue (e.g., BullMQ with Redis) or an external scheduler for production reminders.
+
 Notes
 
 - This is a prototype: events and scheduled reminders are stored in memory and will be lost on server restart.

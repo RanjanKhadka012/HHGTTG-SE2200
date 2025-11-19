@@ -1,6 +1,7 @@
 (function(){
   // Hide the events container immediately to avoid showing un-grouped DOM
   // items briefly before our JS groups them. We'll reveal it after render.
+  // tristan was here
   const __eventsContainer = document.querySelector('.events');
   if(__eventsContainer) __eventsContainer.style.visibility = 'hidden';
   // Utility functions

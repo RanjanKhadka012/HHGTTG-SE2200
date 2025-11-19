@@ -19,6 +19,7 @@ body{
 .wrap{
     max-width:720px;
     margin:0 auto;
+    padding-bottom: 80px;
 }
 /* controls */
 .controls{display:flex;justify-content:flex-end;margin-bottom:12px}
@@ -103,12 +104,29 @@ h1.title{
 /* All events heading */
 .all-events{
     margin-top:26px;
+    margin-bottom: 30px;
     text-align:center;
     font-family: 'Fredoka One', 'Montserrat', sans-serif;
     font-size:28px;
     color:#000;
     text-shadow:0 1px 0 rgba(255,255,255,0.4);
+
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: 2px solid #000;
+    background: #1a6a70;
+    cursor: pointer;
+    text-align: center;
 }
+
+.all-events:hover {
+  font-size:35px;
+}
+
 /* Details and expanded state */
 .event.expanded{flex-direction:column;align-items:stretch;height:auto;padding-bottom:14px}
 .event .details{

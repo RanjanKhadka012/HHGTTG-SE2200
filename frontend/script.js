@@ -13,7 +13,8 @@
     return Math.round((startOfDay(a)-startOfDay(b))/msPerDay);
   }
   function formatShortDate(d){
-    // mm/dd/yy
+    // mm/dd/yyyy
+    
     const mm = String(d.getMonth()+1).padStart(2,'0');
     const dd = String(d.getDate()).padStart(2,'0');
     const yy = String(d.getFullYear()).slice(-2);

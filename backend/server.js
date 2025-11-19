@@ -219,7 +219,7 @@ app.post('/api/next-occurrences', (req,res)=>{
 
 // Initialize DB if present then start server
 initDb().then(()=> loadAndScheduleFromDb()).catch(err=> console.warn('DB init failed', err)).finally(()=>{
-  app.listen(PORT, ()=> console.log(`Server listening on http://localhost:${PORT} (frontend allowed: ${FRONTEND_URL})`));
+  app.listen(PORT, ()=> console.log(`Server listening on http://localhost:${PORT} (allowed origins: ${FRONTEND_URLS.join(',')})`));
 });
 
 process.on('SIGINT', async ()=>{

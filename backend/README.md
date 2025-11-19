@@ -43,4 +43,3 @@ Notes
 - This is a prototype: events and scheduled reminders are stored in memory and will be lost on server restart.
 - The project uses `rrule` to compute recurrence rules (RFC 5545). Reminders are scheduled using `setTimeout`.
 - For production you should add persistent storage (database) and a persistent job scheduler (e.g., Agenda with MongoDB or a message queue).
-

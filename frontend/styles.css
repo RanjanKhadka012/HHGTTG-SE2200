@@ -120,7 +120,12 @@ body,
     padding:12px 18px;
     box-shadow:0 8px 0 rgba(0,0,0,0.03) inset, 0 6px 18px rgba(0,0,0,0.08);
     overflow:hidden;
+    transform-origin: center;
+    animation: pillEnter 0.1s ease-out;               /* quick tilt-in */
+    transition: transform 180ms ease, box-shadow 180ms ease;
 }
+
+
 .event .left{
     width:var(--left-w);
     flex:0 0 var(--left-w);
@@ -146,8 +151,6 @@ body,
     align-items:center;
     justify-content:center;
 }
-
-
 
 /* tiny dropdown triangle */
 .arrow{
@@ -219,23 +222,7 @@ body,
 .event .details .d-item .title{font-weight:700;color:rgba(255,255,255,0.95)}
 .event .left{cursor:pointer}
 .event .left:focus{outline:3px solid rgba(255,255,255,0.12);outline-offset:3px;border-radius:6px}
- .event {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-
-    /* Start off-screen on the left using margin instead of transform */
-    margin-left: -100%;
-    opacity: 0;
-
-    /* Trigger animation automatically on load */
-    animation: slideIn 0.4s ease-out forwards;
-
-    /* Smooth hover animation */
-    transition: transform 180ms ease, box-shadow 180ms ease;
-}
-
+ 
 /* Add hover animation */
 .event:hover {
     transform: scale(1.03);
@@ -249,19 +236,20 @@ body,
   /* Animation keyframes */
   @keyframes slideIn {
   from {
-    margin-left: -100%;
-    opacity: 0;
+    margin-left: -75%;
+    
   }
   to {
     margin-left: 0;
-    opacity: 1;
+    
   }
 }
 
-.e-green { animation: slideIn 0.6s ease-out forwards; }
-.e-blue  { animation: slideIn 0.8s ease-out forwards; }
-.e-pink  { animation: slideIn 1s ease-out forwards; }
-.e-orange{ animation: slideIn 1.2s ease-out forwards; }
+.e-red { animation: slideIn 0.6s ease-out forwards; }
+.e-green { animation: slideIn 1.2s ease-out forwards; }
+.e-blue  { animation: slideIn 1.8s ease-out forwards; }
+.e-pink  { animation: slideIn 2.1s ease-out forwards; }
+.e-orange{ animation: slideIn 2.7s ease-out forwards; }
 
 /* === CREATE PAGE LAYOUT === */
 

@@ -15,7 +15,7 @@ body{
     background:var(--bg);
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
-    padding:40px 18px;
+    padding:5px 18px;
     color:#222;
 }
 .wrap{
@@ -34,12 +34,20 @@ body{
     cursor:pointer;
     transition: padding 0.2s ease;
 }
-.btn:hover{
-    padding:15px 20px;
-}
 .btn.muted{
     background:#eee;
     color:#222
+}
+
+/* Make the Create Event button bigger */
+.controls .btn {
+    padding: 14px 28px;   /* bigger click area */
+    font-size: 18px;      /* bigger text */
+    border-radius: 10px;  /* slightly rounder */
+}
+
+.btn:hover{
+    padding:20px 32px;
 }
 
 /* simple event form */
@@ -48,14 +56,53 @@ body{
 .event-form label{display:block;margin:8px 0;color:#222}
 .event-form input{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08)}
 .form-actions{display:flex;gap:10px;margin-top:10px}
-h1.title{
+
+.title{
     text-align:center;
     margin:6px 0 18px 0;
-    font-family: 'Fredoka One', 'Montserrat', sans-serif;
-    font-size:34px;
-    color:#222;
-    letter-spacing:1px;
 }
+.title,
+.event .left {
+  font-family: 'Baloo 2', 'Montserrat', sans-serif;
+}
+
+body,
+.event .center {
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+/* Centered logo button */
+.logo-btn {
+    display: flex;                 /* make it a flex container */
+    justify-content: center;       /* center the image horizontally */
+    align-items: center;           /* center vertically (just in case) */
+    cursor: pointer;
+    padding: 10px 0;
+    margin-bottom: 5px;           /* space under the logo */
+}
+
+/* Logo image */
+.logo-btn img {
+    display: block;
+    height: 48px;
+    transition: transform 0.25s ease;   /* smooth scale on hover */
+}
+
+/* Smooth hover animation */
+.logo-btn:hover img {
+    transform: scale(1.2);        /* gentle grow effect */
+}
+
+.btn,
+.all-events {
+    font-family: 'Baloo 2', 'Montserrat', sans-serif;
+    font-weight: 700;      /* softer than 700 */
+    letter-spacing: 0;     /* no wide spacing */
+    text-transform: none;  /* no ALL CAPS */
+    font-size: 12px;       /* nice and readable */
+}
+
+
 .events{display:flex;flex-direction:column;gap:var(--gap);padding:8px 4px}
 .event{
     display:flex;
@@ -128,7 +175,6 @@ h1.title{
     font-family: 'Fredoka One', 'Montserrat', sans-serif;
     font-size:28px;
     color:#000;
-    text-shadow:0 1px 0 rgba(255,255,255,0.4);
 
     display: block;
     margin-left: auto;

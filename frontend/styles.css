@@ -255,7 +255,7 @@ body,
 
 .create-page .wrap {
     max-width: 520px;
-    margin: 40px auto 24px;
+    margin: 20px auto 24px;
     background: #1a6a70;           /* teal panel */
     border-radius: 40px;
     padding: 28px 28px 24px;
@@ -267,6 +267,7 @@ body,
     text-align: center;
     font-family: 'Fredoka One', 'Montserrat', sans-serif;
     font-size: 30px;
+    font-weight: 400;
     margin: 0 0 20px 0;
     color: #111;
 }

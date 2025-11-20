@@ -25,18 +25,22 @@ body{
 }
 /* controls */
 .controls{display:flex;justify-content:flex-end;margin-bottom:12px}
-.btn{
+.btn {
     background:#222;
     color:#fff;
     border:none;
     padding:10px 14px;
     border-radius:8px;
     cursor:pointer;
-    transition: padding 0.2s ease;
+    font-family: 'Montserrat', system-ui, sans-serif;
+
+    /* smooth hover animation */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.btn.muted{
+
+.btn.muted {
     background:#eee;
-    color:#222
+    color:#222;
 }
 
 /* Make the Create Event button bigger */
@@ -46,9 +50,12 @@ body{
     border-radius: 10px;  /* slightly rounder */
 }
 
-.btn:hover{
-    padding:20px 32px;
+/* hover animation for Create + Cancel + any .btn */
+.btn:hover {
+    transform: scale(1.05);                     /* gentle grow */
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);    /* soft shadow */
 }
+
 
 /* simple event form */
 .event-form{display:none;background:rgba(255,255,255,0.06);padding:12px;border-radius:12px;margin-bottom:18px}
@@ -255,4 +262,107 @@ body,
 .e-blue  { animation: slideIn 0.8s ease-out forwards; }
 .e-pink  { animation: slideIn 1s ease-out forwards; }
 .e-orange{ animation: slideIn 1.2s ease-out forwards; }
+
+/* === CREATE PAGE LAYOUT === */
+
+.create-page .wrap {
+    max-width: 520px;
+    margin: 40px auto 24px;
+    background: #1a6a70;           /* teal panel */
+    border-radius: 40px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+/* "Create Event" title inside panel */
+.create-page .title {
+    text-align: center;
+    font-family: 'Fredoka One', 'Montserrat', sans-serif;
+    font-size: 30px;
+    margin: 0 0 20px 0;
+    color: #111;
+}
+/* reset default event-form styles on create page */
+.create-page .event-form {
+    display: block;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+/* each label becomes a red pill bar */
+.create-page .event-form label {
+    display: block;
+    margin-bottom: 14px;
+    background: #f06262;                      /* red pill */
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-family: 'Fredoka One', 'Montserrat', sans-serif;
+    font-size: 16px;
+    color: #f5e050;                           /* yellow text */
+}
+
+/* text inside the pill (the actual input) */
+.create-page .event-form label input {
+    display: block;
+    margin-top: 6px;
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* placeholder color */
+.create-page .event-form label input::placeholder {
+    color: rgba(255,255,255,0.8);
+}
+/* description block: big rounded red + inner white box */
+.create-page .event-form .desc-label {
+    border-radius: 40px;
+    padding: 14px 18px 18px;
+}
+
+.create-page .event-form .desc-box {
+    margin-top: 10px;
+    background: #fff;
+    border-radius: 30px;
+    padding: 12px 14px;
+}
+
+.create-page .event-form .desc-box textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: vertical;
+    min-height: 120px;
+    background: transparent;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 14px;
+    color: #222;
+}
+/* actions row inside teal panel */
+.create-page .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* bigger, bold primary button */
+.create-page .form-actions .btn {
+    padding: 10px 22px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* optional: tweak muted button */
+.create-page .form-actions .btn.muted {
+    background: #eee;
+    color: #222;
+}
+
 

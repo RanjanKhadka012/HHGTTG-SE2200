@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles.css">
   <script src="create.js" defer></script>
 </head>
-<body>
+<body class="create-page">
   <div class="wrap">
     <h1 class="title">Create Event</h1>
     <form id="create-form" class="event-form" aria-hidden="false">
@@ -24,9 +24,12 @@
         <input type="time" name="time" required>
       </label>
 
-      <label>Duration
-        <input type="text" name="duration" placeholder="e.g. 30 mins">
+      <label class="desc-label">Event Description
+          <div class="desc-box">
+              <textarea name="description" placeholder="Type here"></textarea>
+          </div>
       </label>
+
 
       <label>Reminder (minutes before)
         <input type="number" name="reminderMinutes" min="0">

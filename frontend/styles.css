@@ -204,24 +204,64 @@ body,
 }
 
 /* Details and expanded state */
-.event.expanded{flex-direction:column;align-items:stretch;height:auto;padding-bottom:14px}
+.event.expanded{
+    flex-direction:column;
+    align-items:stretch;
+    height:auto;
+    padding-bottom:14px
+}
+
+/* Expanded card layout */
+.event.expanded {
+    flex-direction: row;
+    align-items: flex-start;      /* push content to the top-left */
+    height: auto;
+    padding: 18px 18px 14px;      /* a bit more padding at top */
+}
+
+/* Date (left) – keep close to top */
+.event.expanded .left {
+    margin-bottom: 125px;           /* small gap under the date */
+}
+
+/* Title (center) – directly under date */
+.event.expanded .center {
+    margin-bottom: 125px;          /* small gap before the details/arrow */
+}
+
+
 .event .details{
-    display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:8px;border-radius:12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:10px;
+    padding:8px;
+    border-radius:12px;
     /* start hidden for animation: use max-height to animate open/close */
     max-height: 0;
-    opacity: 0;
+    opacity: 1;
     overflow: hidden;
     transition: max-height 260ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease;
 }
-.event .details .d-item{display:flex;align-items:center;gap:12px}
+.event .details .d-item{display:flex;
+    align-items:center;
+    gap:12px
+}
 .event.expanded .details{
     opacity: 1;
     /* large max so content fits; transition will animate to real height */
     max-height: 1000px;
 }
-.event .details .d-item .title{font-weight:700;color:rgba(255,255,255,0.95)}
-.event .left{cursor:pointer}
-.event .left:focus{outline:3px solid rgba(255,255,255,0.12);outline-offset:3px;border-radius:6px}
+.event .details .d-item .title{
+    font-weight:700;
+    color:rgba(255,255,255,0.95)
+}
+.event .left{
+    cursor:pointer
+}
+.event .left:focus{outline:3px solid rgba(255,255,255,0.12);
+    outline-offset:3px;
+    border-radius:6px}
  
 /* Add hover animation */
 .event:hover {

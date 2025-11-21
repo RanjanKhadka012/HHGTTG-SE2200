@@ -366,7 +366,11 @@ body,
     color: #151410;                          
 }
 
-/* text inside the pill (the actual input) */
+/* text inside the pill (the actual input) 
+
+vvv Change this to re-do "pill" layout vvv
+
+*/
 .create-page .event-form label input {
     display: block;
     margin-top: 6px;
@@ -384,7 +388,7 @@ body,
 .create-page .event-form label input::placeholder {
     color: rgba(255,255,255,0.8);
 }
-/* description block: big rounded red + inner white box */
+/* description block: big rounded teal + inner white box */
 .create-page .event-form .desc-label {
     border-radius: 40px;
     padding: 14px 18px 18px;

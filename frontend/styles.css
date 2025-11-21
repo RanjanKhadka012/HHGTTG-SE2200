@@ -109,6 +109,31 @@ body,
     font-size: 12px;       /* nice and readable */
 }
 
+/* container for buttons inside details */
+.details-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+/* delete button style */
+.btn-delete {
+    background: #f06262;          /* red like your e-red pill */
+    color: #fff;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-delete:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    opacity: 0.95;
+}
+
 
 .events{display:flex;flex-direction:column;gap:var(--gap);padding:8px 4px}
 .event{
@@ -243,7 +268,8 @@ body,
     overflow: hidden;
     transition: max-height 260ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease;
 }
-.event .details .d-item{display:flex;
+.event .details .d-item{
+    display:flex;
     align-items:center;
     gap:12px
 }
@@ -259,9 +285,11 @@ body,
 .event .left{
     cursor:pointer
 }
-.event .left:focus{outline:3px solid rgba(255,255,255,0.12);
+.event .left:focus{
+    outline:3px solid rgba(255,255,255,0.12);
     outline-offset:3px;
-    border-radius:6px}
+    border-radius:6px
+}
  
 /* Add hover animation */
 .event:hover {
@@ -293,10 +321,11 @@ body,
 
 /* === CREATE PAGE LAYOUT === */
 
+/* Teal Background */
 .create-page .wrap {
     max-width: 520px;
     margin: 20px auto 24px;
-    background: #1a6a70;           /* teal panel */
+    background: #1a6a70;           
     border-radius: 40px;
     padding: 28px 28px 24px;
     box-shadow: 0 12px 30px rgba(0,0,0,0.25);
@@ -309,7 +338,7 @@ body,
     font-size: 30px;
     font-weight: 400;
     margin: 0 0 20px 0;
-    color: #111;
+    color: #211a1a;
 }
 /* reset default event-form styles on create page */
 .create-page .event-form {
@@ -319,16 +348,22 @@ body,
     margin: 0;
 }
 
-/* each label becomes a red pill bar */
+
+
+/* each label becomes a teal pill bar */
+
+/*vvvv pill block Commented out, possibly add back in later? */
+
+
 .create-page .event-form label {
-    display: block;
+/*  display: block;
     margin-bottom: 14px;
-    background: #f06262;                      /* red pill */
+    background: #204c4c;                      
     border-radius: 999px;
-    padding: 8px 18px;
+    padding: 8px 18px; */
     font-family: 'Fredoka One', 'Montserrat', sans-serif;
     font-size: 16px;
-    color: #f5e050;                           /* yellow text */
+    color: #151410;                          
 }
 
 /* text inside the pill (the actual input) */
@@ -338,11 +373,11 @@ body,
     width: 100%;
     border: none;
     outline: none;
-    background: transparent;
+    background: whitesmoke; /*Color of text area*/
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 14px;
     font-weight: 600;
-    color: #fff;
+    color: #222;
 }
 
 /* placeholder color */
@@ -371,7 +406,7 @@ body,
     background: transparent;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 14px;
-    color: #222;
+    color: #000000;
 }
 /* actions row inside teal panel */
 .create-page .form-actions {

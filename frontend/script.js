@@ -135,9 +135,19 @@
     });
   }
 
+  // Read API base from meta tag if present (set this in the deployed index.html on Vercel)
+  (function(){
+    try{
+      const meta = document.querySelector('meta[name="api-base"]');
+      if(meta && meta.content && meta.content.trim()) window.__API_BASE__ = meta.content.trim();
+    }catch(e){}
+  })();
+
   // Try to load events from backend; fallback to reading inline DOM events if backend unavailable
   async function loadAndRender(){
-    const API = 'http://localhost:3000';
+    // API base is configurable at runtime by setting `window.__API_BASE__` from your host (Vercel)
+    // Fallbacks: localhost for local dev, otherwise assume production backend will be set by you.
+    const API = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
     try{
       const resp = await fetch(API + '/api/events');
       if(!resp.ok) throw new Error('bad response');
@@ -179,7 +189,7 @@
 
   // Create or update event: try backend, fall back to localStorage
   async function saveEvent(event){
-    const API = 'http://localhost:3000';
+    const API = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
     try{
       if(event.id && !String(event.id).startsWith('dom-')){
         // update
@@ -221,7 +231,7 @@
 
   // Delete event: try backend, fall back to localStorage
   async function deleteEventById(id){
-    const API = 'http://localhost:3000';
+    const API = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
     try{
       if(!id) return;
       if(!String(id).startsWith('dom-')){
@@ -349,7 +359,8 @@
             } else {
               // no local candidate: ask backend to delete by searching events
               try{
-                const resp = await fetch('http://localhost:3000/api/events');
+                const base = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
+                const resp = await fetch(base + '/api/events');
                 const all = await resp.json();
                 const match = all.find(e=> e.title === title);
                 if(match) await deleteEventById(match.id);

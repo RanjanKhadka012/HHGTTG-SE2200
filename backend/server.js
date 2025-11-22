@@ -7,9 +7,26 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS: allow frontend URL if provided, otherwise allow all (for prototype)
-const FRONTEND_URL = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://hhgttg-se-2200.vercel.app';
-app.use(cors({ origin: FRONTEND_URL }));
+// CORS: allow a list of allowed frontend origins via FRONTEND_URLS (comma-separated)
+// Defaults include the public Vercel frontend and localhost for local dev.
+const defaultFrontendList = [
+  (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim()),
+  'https://remember-to-do.vercel.app',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+].filter(Boolean);
+const FRONTEND_URLS = (process.env.FRONTEND_URLS || defaultFrontendList.join(',')).split(',').map(s=>s.trim()).filter(Boolean);
+
+app.use(cors({
+  origin: function(origin, cb){
+    // allow requests with no origin (e.g., curl, mobile clients)
+    if(!origin) return cb(null, true);
+    if(FRONTEND_URLS.indexOf(origin) !== -1) return cb(null, true);
+    return cb(new Error('Origin not allowed by CORS: ' + origin));
+  }
+}));
 app.use(express.json());
 
 // In-memory store (fallback prototype)
@@ -202,7 +219,7 @@ app.post('/api/next-occurrences', (req,res)=>{
 
 // Initialize DB if present then start server
 initDb().then(()=> loadAndScheduleFromDb()).catch(err=> console.warn('DB init failed', err)).finally(()=>{
-  app.listen(PORT, ()=> console.log(`Server listening on http://localhost:${PORT} (frontend allowed: ${FRONTEND_URL})`));
+  app.listen(PORT, ()=> console.log(`Server listening on http://localhost:${PORT} (allowed origins: ${FRONTEND_URLS.join(',')})`));
 });
 
 process.on('SIGINT', async ()=>{

@@ -356,11 +356,11 @@ body,
 
 
 .create-page .event-form label {
-/*  display: block;
+  display: block;
     margin-bottom: 14px;
-    background: #204c4c;                      
+    background: #f5e050;                      
     border-radius: 999px;
-    padding: 8px 18px; */
+    padding: 8px 18px; 
     font-family: 'Fredoka One', 'Montserrat', sans-serif;
     font-size: 16px;
     color: #151410;                          
@@ -377,7 +377,7 @@ vvv Change this to re-do "pill" layout vvv
     width: 100%;
     border: none;
     outline: none;
-    background: whitesmoke; /*Color of text area*/
+    background: #f5e050; /*Color of text area*/
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 14px;
     font-weight: 600;

@@ -1,4 +1,20 @@
 (function(){
+  // If this is the user's first time visiting the index page in this browser
+  // session, redirect to the login page after 3 seconds. We use sessionStorage
+  // so the redirect happens only once per browser session.
+  try{
+    const visitKey = 'se2200_seen_index_v1';
+    const isIndex = location.pathname === '/' || location.pathname.endsWith('/index.html');
+    if(isIndex && !sessionStorage.getItem(visitKey)){
+      // mark as seen so subsequent navigations in this session won't redirect
+      sessionStorage.setItem(visitKey, '1');
+      setTimeout(()=>{
+        // redirect to login page relative to current location
+        try{ location.href = 'login.html'; }catch(e){}
+      }, 3000);
+    }
+  }catch(e){ /* ignore sessionStorage errors */ }
+
   // Hide the events container immediately to avoid showing un-grouped DOM
   // items briefly before our JS groups them. We'll reveal it after render.
   // tristan was here

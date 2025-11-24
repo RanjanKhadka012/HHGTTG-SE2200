@@ -2,6 +2,12 @@
   // Hide the events container immediately to avoid showing un-grouped DOM
   // items briefly before our JS groups them. We'll reveal it after render.
   // tristan was here
+ 
+// Redirect to login page if no token
+if (!localStorage.getItem("token")) {
+    window.location.href = "login.html";
+}
+
   const __eventsContainer = document.querySelector('.events');
   if(__eventsContainer) __eventsContainer.style.visibility = 'hidden';
   // Utility functions

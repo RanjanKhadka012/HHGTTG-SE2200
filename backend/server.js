@@ -7,31 +7,22 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS: allow a list of allowed frontend origins via FRONTEND_URLS (comma-separated)
-// Defaults include the public Vercel frontend and localhost for local dev.
-const defaultFrontendList = [
-  (process.env.FRONTEND_URL && process.env.FRONTEND_URL.trim()),
-  'https://remember-to-do.vercel.app',
-  'http://localhost:8080',
-  'http://127.0.0.1:8080',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000'
-].filter(Boolean);
-const FRONTEND_URLS = (process.env.FRONTEND_URLS || defaultFrontendList.join(',')).split(',').map(s=>s.trim()).filter(Boolean);
+/* CORS: allow frontend URL if provided, otherwise allow all (for prototype)
+const FRONTEND_URL = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://hhgttg-se-2200.vercel.app';
+app.use(cors({ origin: FRONTEND_URL }));
+app.use(express.json());
+*/
 
-app.use(cors({
-  origin: function(origin, cb){
-    // allow requests with no origin (e.g., curl, mobile clients)
-    if(!origin) return cb(null, true);
-    if(FRONTEND_URLS.indexOf(origin) !== -1) return cb(null, true);
-    return cb(new Error('Origin not allowed by CORS: ' + origin));
-  }
-}));
+// For development, allow all origins
+app.use(cors());
 app.use(express.json());
 
 // In-memory store (fallback prototype)
 const EVENTS = new Map(); // id -> event
 const SCHEDULED = new Map(); // id -> timeoutId
+
+// In-memory users store (prototype auth)
+const USERS = new Map(); // username -> { id, username, password, name, email }
 
 // Optional Postgres pool (if DATABASE_URL provided by platform like Railway)
 let pool = null;
@@ -96,6 +87,62 @@ app.get('/api/events', async (req, res) => {
     console.error('GET /api/events error', err);
     res.status(500).json({error: 'server error'});
   }
+});
+
+// ---------- Auth: signup & login (prototype only) ----------
+
+// SIGNUP
+app.post('/api/auth/signup', (req, res) => {
+  const { name, email, username, password } = req.body || {};
+
+  // Basic validation
+  if (!username || !password || !email) {
+    return res.status(400).json({ message: 'Missing required fields (username, email, password)' });
+  }
+
+  if (USERS.has(username)) {
+    return res.status(409).json({ message: 'Username already taken' });
+  }
+
+  const id = uuidv4();
+  const user = { id, username, password, name: name || '', email };
+  USERS.set(username, user);
+
+  // Return minimal info (no password)
+  return res.status(201).json({
+    id: user.id,
+    username: user.username,
+    name: user.name,
+    email: user.email
+  });
+});
+
+// LOGIN
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body || {};
+
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Missing username or password' });
+  }
+
+  const user = USERS.get(username);
+  if (!user || user.password !== password) {
+    return res.status(401).json({ message: 'Invalid username or password' });
+  }
+
+  // Fake token for prototype – in a real app use JWT + hashed passwords
+  const token = 'fake-token-' + user.id;
+
+  return res.json({
+    message: 'Login successful',
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      email: user.email
+    }
+  });
 });
 
 app.post('/api/events', async (req, res) => {
@@ -218,12 +265,17 @@ app.post('/api/next-occurrences', (req,res)=>{
 });
 
 // Initialize DB if present then start server
-initDb().then(()=> loadAndScheduleFromDb()).catch(err=> console.warn('DB init failed', err)).finally(()=>{
-  app.listen(PORT, ()=> console.log(`Server listening on http://localhost:${PORT} (allowed origins: ${FRONTEND_URLS.join(',')})`));
-});
+initDb()
+  .then(() => loadAndScheduleFromDb())
+  .catch(err => console.warn('DB init failed', err))
+  .finally(() => {
+    app.listen(PORT, () => {
+      console.log(`Server listening on http://localhost:${PORT}`);
+    });
+  });
 
-process.on('SIGINT', async ()=>{
+process.on('SIGINT', async () => {
   console.log('Shutting down...');
-  try{ if(pool) await pool.end(); }catch(e){}
+  try { if (pool) await pool.end(); } catch(e) {}
   process.exit(0);
 });

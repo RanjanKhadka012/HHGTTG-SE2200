@@ -15,7 +15,7 @@ body{
     background:var(--bg);
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
-    padding:40px 18px;
+    padding:5px 18px;
     color:#222;
 }
 .wrap{
@@ -25,8 +25,37 @@ body{
 }
 /* controls */
 .controls{display:flex;justify-content:flex-end;margin-bottom:12px}
-.btn{background:#222;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
-.btn.muted{background:#eee;color:#222}
+.btn {
+    background:#222;
+    color:#fff;
+    border:none;
+    padding:10px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-family: 'Montserrat', system-ui, sans-serif;
+
+    /* smooth hover animation */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn.muted {
+    background:#eee;
+    color:#222;
+}
+
+/* Make the Create Event button bigger */
+.controls .btn {
+    padding: 14px 28px;   /* bigger click area */
+    font-size: 18px;      /* bigger text */
+    border-radius: 10px;  /* slightly rounder */
+}
+
+/* hover animation for Create + Cancel + any .btn */
+.btn:hover {
+    transform: scale(1.05);                     /* gentle grow */
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);    /* soft shadow */
+}
+
 
 /* simple event form */
 .event-form{display:none;background:rgba(255,255,255,0.06);padding:12px;border-radius:12px;margin-bottom:18px}
@@ -34,14 +63,78 @@ body{
 .event-form label{display:block;margin:8px 0;color:#222}
 .event-form input{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08)}
 .form-actions{display:flex;gap:10px;margin-top:10px}
-h1.title{
+
+.title{
     text-align:center;
     margin:6px 0 18px 0;
-    font-family: 'Fredoka One', 'Montserrat', sans-serif;
-    font-size:34px;
-    color:#222;
-    letter-spacing:1px;
 }
+.title,
+.event .left {
+  font-family: 'Baloo 2', 'Montserrat', sans-serif;
+}
+
+body,
+.event .center {
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+/* Centered logo button */
+.logo-btn {
+    display: flex;                 /* make it a flex container */
+    justify-content: center;       /* center the image horizontally */
+    align-items: center;           /* center vertically (just in case) */
+    cursor: pointer;
+    padding: 10px 0;
+    margin-bottom: 5px;           /* space under the logo */
+}
+
+/* Logo image */
+.logo-btn img {
+    display: block;
+    height: 48px;
+    transition: transform 0.25s ease;   /* smooth scale on hover */
+}
+
+/* Smooth hover animation */
+.logo-btn:hover img {
+    transform: scale(1.2);        /* gentle grow effect */
+}
+
+.btn,
+.all-events {
+    font-family: 'Baloo 2', 'Montserrat', sans-serif;
+    font-weight: 700;      /* softer than 700 */
+    letter-spacing: 0;     /* no wide spacing */
+    text-transform: none;  /* no ALL CAPS */
+    font-size: 12px;       /* nice and readable */
+}
+
+/* container for buttons inside details */
+.details-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+/* delete button style */
+.btn-delete {
+    background: #f06262;          /* red like your e-red pill */
+    color: #fff;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-delete:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    opacity: 0.95;
+}
+
+
 .events{display:flex;flex-direction:column;gap:var(--gap);padding:8px 4px}
 .event{
     display:flex;
@@ -52,7 +145,12 @@ h1.title{
     padding:12px 18px;
     box-shadow:0 8px 0 rgba(0,0,0,0.03) inset, 0 6px 18px rgba(0,0,0,0.08);
     overflow:hidden;
+    transform-origin: center;
+    animation: pillEnter 0.1s ease-out;               /* quick tilt-in */
+    transition: transform 180ms ease, box-shadow 180ms ease;
 }
+
+
 .event .left{
     width:var(--left-w);
     flex:0 0 var(--left-w);
@@ -78,6 +176,7 @@ h1.title{
     align-items:center;
     justify-content:center;
 }
+
 /* tiny dropdown triangle */
 .arrow{
     width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid rgba(255,255,255,0.95);
@@ -111,7 +210,6 @@ h1.title{
     font-family: 'Fredoka One', 'Montserrat', sans-serif;
     font-size:28px;
     color:#000;
-    text-shadow:0 1px 0 rgba(255,255,255,0.4);
 
     display: block;
     margin-left: auto;
@@ -123,6 +221,7 @@ h1.title{
     background: #1a6a70;
     cursor: pointer;
     text-align: center;
+    transition: font-size 0.2s ease;
 }
 
 .all-events:hover {
@@ -130,65 +229,208 @@ h1.title{
 }
 
 /* Details and expanded state */
-.event.expanded{flex-direction:column;align-items:stretch;height:auto;padding-bottom:14px}
+.event.expanded{
+    flex-direction:column;
+    align-items:stretch;
+    height:auto;
+    padding-bottom:14px
+}
+
+/* Expanded card layout */
+.event.expanded {
+    flex-direction: row;
+    align-items: flex-start;      /* push content to the top-left */
+    height: auto;
+    padding: 18px 18px 14px;      /* a bit more padding at top */
+}
+
+/* Date (left) – keep close to top */
+.event.expanded .left {
+    margin-bottom: 125px;           /* small gap under the date */
+}
+
+/* Title (center) – directly under date */
+.event.expanded .center {
+    margin-bottom: 125px;          /* small gap before the details/arrow */
+}
+
+
 .event .details{
-    display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:8px;border-radius:12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:10px;
+    padding:8px;
+    border-radius:12px;
     /* start hidden for animation: use max-height to animate open/close */
     max-height: 0;
-    opacity: 0;
+    opacity: 1;
     overflow: hidden;
     transition: max-height 260ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease;
 }
-.event .details .d-item{display:flex;align-items:center;gap:12px}
+.event .details .d-item{
+    display:flex;
+    align-items:center;
+    gap:12px
+}
 .event.expanded .details{
     opacity: 1;
     /* large max so content fits; transition will animate to real height */
     max-height: 1000px;
 }
-.event .details .d-item .title{font-weight:700;color:rgba(255,255,255,0.95)}
-.event .left{cursor:pointer}
-.event .left:focus{outline:3px solid rgba(255,255,255,0.12);outline-offset:3px;border-radius:6px}
- .event {
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    
-    /* Start off-screen on the left */
-    transform: translateX(-100%);
-    opacity: 0;
-
-    /* Trigger animation automatically on load */
-    animation: slideIn 0.4s ease-out forwards;
-  }
+.event .details .d-item .title{
+    font-weight:700;
+    color:rgba(255,255,255,0.95)
+}
+.event .left{
+    cursor:pointer
+}
+.event .left:focus{
+    outline:3px solid rgba(255,255,255,0.12);
+    outline-offset:3px;
+    border-radius:6px
+}
+ 
+/* Add hover animation */
+.event:hover {
+    transform: scale(1.03);
+    box-shadow: 0 12px 26px rgba(0,0,0,0.18);
+}
+.event:focus-within {
+    transform: none; /* make sure it’s normal size */
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.4); /* little highlight */
+}
 
   /* Animation keyframes */
   @keyframes slideIn {
-    from {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  from {
+    margin-left: -75%;
+    
   }
-.e-green
-{
+  to {
+    margin-left: 0;
+    
+  }
+}
 
-    animation: slideIn 0.6s ease-out forwards;
-}
-.e-blue
-{
+.e-red { animation: slideIn 0.6s ease-out forwards; }
+.e-green { animation: slideIn 1.2s ease-out forwards; }
+.e-blue  { animation: slideIn 1.8s ease-out forwards; }
+.e-pink  { animation: slideIn 2.1s ease-out forwards; }
+.e-orange{ animation: slideIn 2.7s ease-out forwards; }
 
-    animation: slideIn 0.8s ease-out forwards;
+/* === CREATE PAGE LAYOUT === */
+
+/* Teal Background */
+.create-page .wrap {
+    max-width: 520px;
+    margin: 20px auto 24px;
+    background: #1a6a70;           
+    border-radius: 40px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
 }
-.e-pink
-{
-    animation: slideIn 1s ease-out forwards;
+
+/* "Create Event" title inside panel */
+.create-page .title {
+    text-align: center;
+    font-family: 'Fredoka One', 'Montserrat', sans-serif;
+    font-size: 30px;
+    font-weight: 400;
+    margin: 0 0 20px 0;
+    color: #211a1a;
 }
-.e-orange
-{
-    animation: slideIn 1.2s ease-out forwards;
+/* reset default event-form styles on create page */
+.create-page .event-form {
+    display: block;
+    background: transparent;
+    padding: 0;
+    margin: 0;
 }
+
+
+
+/* each label becomes a teal pill bar */
+
+/*vvvv pill block Commented out, possibly add back in later? */
+
+
+.create-page .event-form label {
+/*  display: block;
+    margin-bottom: 14px;
+    background: #204c4c;                      
+    border-radius: 999px;
+    padding: 8px 18px; */
+    font-family: 'Fredoka One', 'Montserrat', sans-serif;
+    font-size: 16px;
+    color: #151410;                          
+}
+
+/* text inside the pill (the actual input) 
+
+vvv Change this to re-do "pill" layout vvv
+
+*/
+.create-page .event-form label input {
+    display: block;
+    margin-top: 6px;
+    width: 100%;
+    border: none;
+    outline: none;
+    background: whitesmoke; /*Color of text area*/
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #222;
+}
+
+/* placeholder color */
+.create-page .event-form label input::placeholder {
+    color: rgba(255,255,255,0.8);
+}
+/* description block: big rounded teal + inner white box */
+.create-page .event-form .desc-label {
+    border-radius: 40px;
+    padding: 14px 18px 18px;
+}
+
+.create-page .event-form .desc-box {
+    margin-top: 10px;
+    background: #fff;
+    border-radius: 30px;
+    padding: 12px 14px;
+}
+
+.create-page .event-form .desc-box textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: vertical;
+    min-height: 120px;
+    background: transparent;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 14px;
+    color: #000000;
+}
+/* actions row inside teal panel */
+.create-page .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* bigger, bold primary button */
+.create-page .form-actions .btn {
+    padding: 10px 22px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* optional: tweak muted button */
+.create-page .form-actions .btn.muted {
+    background: #eee;
+    color: #222;
+}
+
+

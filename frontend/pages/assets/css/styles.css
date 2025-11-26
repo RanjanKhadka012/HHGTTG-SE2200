@@ -297,7 +297,7 @@ body,
     box-shadow: 0 12px 26px rgba(0,0,0,0.18);
 }
 .event:focus-within {
-    transform: none; /* make sure it’s normal size */
+    transform: none; /* make sure it's normal size */
     box-shadow: 0 0 0 3px rgba(255,255,255,0.4); /* little highlight */
 }
 
@@ -356,11 +356,11 @@ body,
 
 
 .create-page .event-form label {
-  display: block;
+/*  display: block;
     margin-bottom: 14px;
-    background: #f5e050;                      
+    background: #204c4c;                      
     border-radius: 999px;
-    padding: 8px 18px; 
+    padding: 8px 18px; */
     font-family: 'Fredoka One', 'Montserrat', sans-serif;
     font-size: 16px;
     color: #151410;                          
@@ -377,7 +377,7 @@ vvv Change this to re-do "pill" layout vvv
     width: 100%;
     border: none;
     outline: none;
-    background: #f5e050; /*Color of text area*/
+    background: whitesmoke; /*Color of text area*/
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 14px;
     font-weight: 600;
@@ -432,5 +432,3 @@ vvv Change this to re-do "pill" layout vvv
     background: #eee;
     color: #222;
 }
-
-

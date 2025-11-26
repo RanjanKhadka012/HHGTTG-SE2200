@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Remember To Do</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <style>
+        .profile-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #1a6a70;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-header h1 {
+            font-size: 32px;
+            color: #fff;
+            margin: 0;
+            font-family: 'Fredoka One', sans-serif;
+        }
+
+        .profile-section {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .profile-section h2 {
+            font-size: 16px;
+            color: #fff;
+            margin: 0 0 15px 0;
+            font-family: 'Fredoka One', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .profile-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .profile-item:last-child {
+            border-bottom: none;
+        }
+
+        .profile-label {
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+        }
+
+        .profile-value {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            max-width: 250px;
+            text-align: right;
+            word-break: break-word;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-edit, .btn-logout {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .btn-edit {
+            background: #fff;
+            color: #1a6a70;
+        }
+
+        .btn-logout {
+            background: #f06262;
+            color: #fff;
+        }
+
+        .btn-edit:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-logout:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(240,98,98,0.3);
+        }
+
+        /* Edit form styles */
+        .edit-form {
+            display: none;
+        }
+
+        .edit-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Montserrat', sans-serif;
+            background: rgba(255,255,255,0.95);
+            color: #1a6a70;
+        }
+
+        .form-group input:focus {
+            outline: 2px solid rgba(255,255,255,0.3);
+            background: #fff;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-save, .btn-cancel {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .btn-save {
+            background: #fff;
+            color: #1a6a70;
+        }
+
+        .btn-cancel {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        .btn-save:hover, .btn-cancel:hover {
+            transform: scale(1.05);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: rgba(255,255,255,1);
+        }
+
+        /* Profile picture styles */
+        .profile-picture-section {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .profile-picture-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.2);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .profile-picture-container:hover {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .profile-picture-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-picture-icon {
+            font-size: 48px;
+            opacity: 0.8;
+        }
+
+        #profile-pic-input {
+            display: none;
+        }
+
+        .pic-upload-hint {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <a href="index.html" class="back-link">← Back to Events</a>
+
+        <div class="profile-container">
+            <div class="profile-header">
+                <h1>My Profile</h1>
+            </div>
+
+            <!-- Profile Picture Section -->
+            <div class="profile-picture-section" id="pic-section">
+                <div class="profile-picture-container" id="profile-pic-display" onclick="document.getElementById('profile-pic-input').click()">
+                    <span class="profile-picture-icon">👍</span>
+                </div>
+                <p class="pic-upload-hint">Click to upload photo</p>
+                <input type="file" id="profile-pic-input" accept="image/*">
+            </div>
+
+            <!-- View Mode -->
+            <div id="view-mode">
+                <div class="profile-section">
+                    <h2>Account Information</h2>
+                    <div class="profile-item">
+                        <span class="profile-label">Username</span>
+                        <span class="profile-value" id="display-username">-</span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label">Email</span>
+                        <span class="profile-value" id="display-email">-</span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label">Name</span>
+                        <span class="profile-value" id="display-name">-</span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label">Member Since</span>
+                        <span class="profile-value" id="display-joined">-</span>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="btn-edit" id="btn-edit-profile">Edit Profile</button>
+                    <button class="btn-logout" id="btn-logout">Logout</button>
+                </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <form id="edit-form" class="edit-form">
+                <div class="profile-section">
+                    <h2>Edit Profile</h2>
+                    <div class="form-group">
+                        <label for="edit-username">Username</label>
+                        <input type="text" id="edit-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-email">Email</label>
+                        <input type="email" id="edit-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-name">Full Name</label>
+                        <input type="text" id="edit-name" name="name" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-save">Save Changes</button>
+                        <button type="button" class="btn-cancel" id="btn-cancel-edit">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/js/profile.js" defer></script>
+</body>
+</html>

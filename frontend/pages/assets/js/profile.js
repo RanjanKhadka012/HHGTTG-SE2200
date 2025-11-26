@@ -70,11 +70,18 @@
     const username = localStorage.getItem('username') || '-';
     const email = localStorage.getItem('email') || '-';
     const name = localStorage.getItem('name') || '-';
+    const joinedDate = localStorage.getItem('joinedDate');
     
     document.getElementById('display-username').textContent = username;
     document.getElementById('display-email').textContent = email;
     document.getElementById('display-name').textContent = name;
-    document.getElementById('display-joined').textContent = new Date().toLocaleDateString();
+    
+    if (joinedDate) {
+      const date = new Date(joinedDate);
+      document.getElementById('display-joined').textContent = date.toLocaleDateString();
+    } else {
+      document.getElementById('display-joined').textContent = 'N/A';
+    }
   }
 
   // Switch to edit mode

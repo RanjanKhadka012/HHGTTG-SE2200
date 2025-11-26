@@ -198,6 +198,8 @@
       const base64 = e.target.result;
       localStorage.setItem('profilePic', base64);
       loadProfilePicture();
+      // Notify index.html to update the logo
+      window.dispatchEvent(new Event('profilePicUpdated'));
     };
     reader.readAsDataURL(file);
   }

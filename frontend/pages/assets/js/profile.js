@@ -171,14 +171,47 @@
     }
   }
 
+  // Profile picture handling
+  function loadProfilePicture() {
+    const picData = localStorage.getItem('profilePic');
+    const picDisplay = document.getElementById('profile-pic-display');
+    
+    if (picData) {
+      const img = document.createElement('img');
+      img.src = picData;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      picDisplay.innerHTML = '';
+      picDisplay.appendChild(img);
+    } else {
+      picDisplay.innerHTML = '<span class="profile-picture-icon">👍</span>';
+    }
+  }
+
+  function handlePictureUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64 = e.target.result;
+      localStorage.setItem('profilePic', base64);
+      loadProfilePicture();
+    };
+    reader.readAsDataURL(file);
+  }
+
   // Event listeners
   document.getElementById('btn-edit-profile').addEventListener('click', enterEditMode);
   document.getElementById('btn-cancel-edit').addEventListener('click', cancelEdit);
   document.getElementById('edit-form').addEventListener('submit', saveProfile);
   document.getElementById('btn-logout').addEventListener('click', logout);
+  document.getElementById('profile-pic-input').addEventListener('change', handlePictureUpload);
 
   // Initialize on page load
   if (checkAuth()) {
     loadProfile();
+    loadProfilePicture();
   }
 })();

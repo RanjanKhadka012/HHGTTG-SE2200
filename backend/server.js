@@ -1,7 +1,7 @@
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
-const pool = require('./src/db');  // MySQL connection
+const pool = require('./src/db'); // mysql2 pool
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,9 +20,94 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// --- USERS ---
+//
+// -------- AUTH ROUTES (LOGIN + SIGNUP) --------
+//
 
-// Create a user
+// SIGNUP (used by signup page if it calls /api/auth/signup)
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { username, userName, password, name, email } = req.body || {};
+    const finalUsername = username || userName;
+
+    if (!finalUsername || !password || !email) {
+      return res.status(400).json({
+        message: 'Missing required fields (username, email, password)'
+      });
+    }
+
+    // Check if username already exists
+    const [existing] = await pool.execute(
+      'SELECT userID FROM users WHERE userName = ?',
+      [finalUsername]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Username already taken' });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO users (userName, password, name, email)
+       VALUES (?, ?, ?, ?)`,
+      [finalUsername, password, name || '', email]
+    );
+
+    return res.status(201).json({
+      id: result.insertId,
+      username: finalUsername,
+      name: name || '',
+      email
+    });
+  } catch (err) {
+    console.error('POST /api/auth/signup error:', err);
+    res.status(500).json({ message: 'Error creating user' });
+  }
+});
+
+// LOGIN (called by login.js => /api/auth/login)
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, userName, password } = req.body || {};
+    const finalUsername = username || userName;
+
+    if (!finalUsername || !password) {
+      return res.status(400).json({ message: 'Missing username or password' });
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT userID, userName AS username, name, email
+       FROM users
+       WHERE userName = ? AND password = ?`,
+      [finalUsername, password]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    const user = rows[0];
+
+    // Fake token for prototype
+    const token = 'fake-token-' + user.userID;
+
+    return res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.userID,
+        username: user.username,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (err) {
+    console.error('POST /api/auth/login error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+//
+// -------- OPTIONAL: simple /api/users create --------
+//
 app.post('/api/users', async (req, res) => {
   try {
     const { userName, password, name, email } = req.body || {};
@@ -33,7 +118,7 @@ app.post('/api/users', async (req, res) => {
 
     const [result] = await pool.execute(
       `INSERT INTO users (userName, password, name, email)
-       VALUES (?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?)` ,
       [userName, password, name, email]
     );
 
@@ -49,148 +134,111 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-// (Optional) simple login — NOT secure, just for class demos
-app.post('/api/login', async (req, res) => {
-  try {
-    const { userName, password } = req.body || {};
-    if (!userName || !password) {
-      return res.status(400).json({ error: 'Missing username or password' });
-    }
+//
+// -------- EVENTS HELPERS --------
+//
 
-    const [rows] = await pool.execute(
-      `SELECT userID, userName, name, email
-       FROM users
-       WHERE userName = ? AND password = ?`,
-      [userName, password]
-    );
+function normalizeTime(t) {
+  if (!t) return null;
+  // 'HH:MM' -> 'HH:MM:00'
+  return t.length === 5 ? t + ':00' : t;
+}
 
-    if (rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    res.json({ user: rows[0] });
-  } catch (err) {
-    console.error('POST /api/login error:', err);
-    res.status(500).json({ error: 'Server error' });
+function mapRowToEvent(row) {
+  let dateStr;
+  if (row.eventDate instanceof Date) {
+    dateStr = row.eventDate.toISOString().slice(0, 10);
+  } else {
+    dateStr = String(row.eventDate);
   }
-});
 
-// --- EVENTS ---
+  let timeStr = String(row.eventTime || '');
+  const shortTime = timeStr.length >= 5 ? timeStr.slice(0, 5) : timeStr;
 
-// Create an event
-app.post('/api/events', async (req, res) => {
-  try {
-    const {
-      userID,
-      title,
-      eventDate,        // 'YYYY-MM-DD'
-      eventTime,        // 'HH:MM:SS' or 'HH:MM'
-      eventDescription,
-      reminderTime      // optional 'HH:MM:SS' or 'HH:MM'
-    } = req.body || {};
+  const dateTimeIso = new Date(`${dateStr}T${shortTime}:00`).toISOString();
 
-    if (!userID || !title || !eventDate || !eventTime) {
-      return res.status(400).json({ error: 'userID, title, eventDate, eventTime are required' });
-    }
+  return {
+    id: row.eventID,
+    title: row.title,
+    description: row.eventDescription || '',
+    date: dateStr,
+    time: shortTime,
+    duration: null,
+    reminderMinutes: null,
+    dateTime: dateTimeIso
+  };
+}
 
-    // Normalize times to HH:MM:SS
-    const normalizeTime = (t) => {
-      if (!t) return null;
-      return t.length === 5 ? t + ':00' : t; // 'HH:MM' -> 'HH:MM:00'
-    };
+//
+// -------- EVENTS ROUTES --------
+//
 
-    const [result] = await pool.execute(
-      `INSERT INTO events
-       (userID, title, eventDate, eventTime, eventDescription, reminderTime)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        userID,
-        title,
-        eventDate,
-        normalizeTime(eventTime),
-        eventDescription || null,
-        normalizeTime(reminderTime)
-      ]
-    );
-
-    res.status(201).json({
-      eventID: result.insertId,
-      userID,
-      title,
-      eventDate,
-      eventTime: normalizeTime(eventTime),
-      eventDescription: eventDescription || null,
-      reminderTime: normalizeTime(reminderTime)
-    });
-  } catch (err) {
-    console.error('POST /api/events error:', err);
-    res.status(500).json({ error: 'Error creating event' });
-  }
-});
-
-// Get events for a user on a specific date
-// Example: GET /api/events?userID=1&date=2025-12-01
+// GET all events
 app.get('/api/events', async (req, res) => {
   try {
-    const { userID, date } = req.query;
-
-    if (!userID || !date) {
-      return res.status(400).json({ error: 'userID and date query params are required' });
-    }
-
     const [rows] = await pool.execute(
-      `SELECT eventID, userID, title, eventDate, eventTime,
-              eventDescription, reminderTime, created
+      `SELECT eventID, title, eventDate, eventTime, eventDescription
        FROM events
-       WHERE userID = ? AND eventDate = ?
-       ORDER BY eventTime`,
-      [userID, date]
+       ORDER BY eventDate, eventTime`
     );
 
-    res.json(rows);
+    const events = rows.map(mapRowToEvent);
+    res.json(events);
   } catch (err) {
     console.error('GET /api/events error:', err);
     res.status(500).json({ error: 'Error fetching events' });
   }
 });
 
-// Delete an event
-app.delete('/api/events/:eventID', async (req, res) => {
+// CREATE event
+app.post('/api/events', async (req, res) => {
   try {
-    const { eventID } = req.params;
+    const { title, date, time, description } = req.body || {};
 
-    const [result] = await pool.execute(
-      `DELETE FROM events WHERE eventID = ?`,
-      [eventID]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Event not found' });
+    if (!title || !date || !time) {
+      return res
+        .status(400)
+        .json({ error: 'title, date, and time are required' });
     }
 
-    res.json({ deleted: eventID });
-  } catch (err) {
-    console.error('DELETE /api/events/:eventID error:', err);
-    res.status(500).json({ error: 'Error deleting event' });
-  }
-});
+    const eventDate = date;                // 'YYYY-MM-DD'
+    const eventTime = normalizeTime(time); // 'HH:MM:SS'
+    const userID = 1; // temp / demo
 
-// Update an event
-app.put('/api/events/:eventID', async (req, res) => {
-  try {
-    const { eventID } = req.params;
-    const {
+    const [result] = await pool.execute(
+      `INSERT INTO events (userID, title, eventDate, eventTime, eventDescription)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userID, title, eventDate, eventTime, description || null]
+    );
+
+    const eventID = result.insertId;
+
+    const eventObj = mapRowToEvent({
+      eventID,
       title,
       eventDate,
       eventTime,
-      eventDescription,
-      reminderTime
-    } = req.body || {};
+      eventDescription: description || null
+    });
 
-    // Fetch existing event
+    res.status(201).json(eventObj);
+  } catch (err) {
+    console.error('POST /api/events error:', err);
+    res.status(500).json({ error: 'Error creating event' });
+  }
+});
+
+// UPDATE event
+app.put('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, date, time, description } = req.body || {};
+
     const [rows] = await pool.execute(
-      `SELECT * FROM events WHERE eventID = ?`,
-      [eventID]
+      `SELECT eventID, userID, title, eventDate, eventTime, eventDescription
+       FROM events
+       WHERE eventID = ?`,
+      [id]
     );
 
     if (rows.length === 0) {
@@ -199,38 +247,52 @@ app.put('/api/events/:eventID', async (req, res) => {
 
     const existing = rows[0];
 
-    const normalizeTime = (t) => {
-      if (!t) return null;
-      return t.length === 5 ? t + ':00' : t;
-    };
-
     const newTitle = title ?? existing.title;
-    const newDate = eventDate ?? existing.eventDate;
-    const newTime = eventTime ? normalizeTime(eventTime) : existing.eventTime;
-    const newDesc = eventDescription ?? existing.eventDescription;
-    const newReminder = reminderTime
-      ? normalizeTime(reminderTime)
-      : existing.reminderTime;
+    const newDate = date ?? existing.eventDate;
+    const newTime = time ? normalizeTime(time) : existing.eventTime;
+    const newDescription =
+      description !== undefined ? description : existing.eventDescription;
 
     await pool.execute(
       `UPDATE events
-       SET title = ?, eventDate = ?, eventTime = ?, eventDescription = ?, reminderTime = ?
+       SET title = ?, eventDate = ?, eventTime = ?, eventDescription = ?
        WHERE eventID = ?`,
-      [newTitle, newDate, newTime, newDesc, newReminder, eventID]
+      [newTitle, newDate, newTime, newDescription, id]
     );
 
-    res.json({
-      eventID,
-      userID: existing.userID,
+    const updated = mapRowToEvent({
+      eventID: id,
       title: newTitle,
       eventDate: newDate,
       eventTime: newTime,
-      eventDescription: newDesc,
-      reminderTime: newReminder
+      eventDescription: newDescription
     });
+
+    res.json(updated);
   } catch (err) {
-    console.error('PUT /api/events/:eventID error:', err);
+    console.error('PUT /api/events/:id error:', err);
     res.status(500).json({ error: 'Error updating event' });
+  }
+});
+
+// DELETE event
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.execute(
+      `DELETE FROM events WHERE eventID = ?`,
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.json({ deleted: id });
+  } catch (err) {
+    console.error('DELETE /api/events/:id error:', err);
+    res.status(500).json({ error: 'Error deleting event' });
   }
 });
 
@@ -238,4 +300,3 @@ app.put('/api/events/:eventID', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-

@@ -8,25 +8,24 @@
     if(isIndex && !sessionStorage.getItem(visitKey)){
       // mark as seen so subsequent navigations in this session won't redirect
       sessionStorage.setItem(visitKey, '1');
-      setTimeout(()=>{
-        // redirect to login page relative to current location
-        try{ location.href = 'login.html'; }catch(e){}
+      setTimeout(()=>{ 
+        try{ location.href = 'login.html'; }catch(e){} 
       }, 3000);
     }
   }catch(e){ /* ignore sessionStorage errors */ }
 
-  // Hide the events container immediately to avoid showing un-grouped DOM
-  // items briefly before our JS groups them. We'll reveal it after render.
-  // tristan was here
- 
-// Redirect to login page if no token
-if (!localStorage.getItem("token")) {
-    window.location.href = "login.html";
-}
+  // Redirect to login page if no token (only on index page)
+  try{
+    if (!localStorage.getItem("token") && location.pathname.endsWith('/index.html')) {
+      window.location.href = "login.html";
+    }
+  }catch(e){}
 
+  // Hide the events container immediately to avoid showing un-grouped DOM
   const __eventsContainer = document.querySelector('.events');
   if(__eventsContainer) __eventsContainer.style.visibility = 'hidden';
-  // Utility functions
+
+  // ---------- date/time utilities ----------
   function startOfDay(d){
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }
@@ -35,8 +34,6 @@ if (!localStorage.getItem("token")) {
     return Math.round((startOfDay(a)-startOfDay(b))/msPerDay);
   }
   function formatShortDate(d){
-    // mm/dd/yyyy
-    
     const mm = String(d.getMonth()+1).padStart(2,'0');
     const dd = String(d.getDate()).padStart(2,'0');
     const yy = String(d.getFullYear()).slice(-2);
@@ -50,11 +47,10 @@ if (!localStorage.getItem("token")) {
     // accept yyyy-mm-dd or mm/dd/yyyy input
     if(!dateStr) return '';
     let d = null;
-    // try ISO first
     const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if(iso){ d = new Date(Number(iso[1]), Number(iso[2])-1, Number(iso[3])); }
-    else {
-      // try mm/dd/yy or mm/dd/yyyy
+    if(iso){
+      d = new Date(Number(iso[1]), Number(iso[2])-1, Number(iso[3]));
+    } else {
       const parts = dateStr.split('/').map(p=>p.trim());
       if(parts.length === 3){
         const month = Number(parts[0]);
@@ -74,130 +70,171 @@ if (!localStorage.getItem("token")) {
     return formatShortDate(d);
   }
 
-  // Render events grouped by computed label. Accepts an array of event objects
-  // Each event object should have: id, title, date (yyyy-mm-dd), optional color
+  // ---------- base renderer (group events by date label) ----------
   function renderGrouped(events){
-    const groups = new Map();
-    events.forEach(ev=>{
-      const dateStr = ev.date || ev.dataDate || ev.dateTime && ev.dateTime.split('T')[0] || '';
-      const label = computeLabelForDate(dateStr);
-      const title = ev.title || '';
-      const colorClass = ev.color || ev.colorClass || 'e-red';
-      if(!groups.has(label)) groups.set(label, {date: dateStr, items: [], color: colorClass});
-      groups.get(label).items.push({id: ev.id, title, date: dateStr, color: colorClass});
+  const groups = new Map();
+  events.forEach(ev => {
+    const dateStr =
+      ev.date ||
+      ev.dataDate ||
+      (ev.dateTime && ev.dateTime.split('T')[0]) ||
+      '';
+    const label = computeLabelForDate(dateStr);
+    const title = ev.title || '';
+    const colorClass = ev.color || ev.colorClass || 'e-red';
+
+    if (!groups.has(label)) {
+      groups.set(label, { date: dateStr, items: [], color: colorClass });
+    }
+
+    // store title + description so we can use them later
+    groups.get(label).items.push({
+      id: ev.id,
+      title,
+      description: ev.description || '',
+      date: dateStr,
+      color: colorClass
     });
+  });
 
-    const container = document.querySelector('.events');
-    if(!container) return;
-    container.innerHTML = '';
+  const container = document.querySelector('.events');
+  if (!container) return;
+  container.innerHTML = '';
 
-    groups.forEach((group, label) => {
-      const article = document.createElement('article');
-      article.className = `event ${group.color}`;
-      article.setAttribute('data-group-label', label);
+  groups.forEach((group, label) => {
+    const article = document.createElement('article');
+    article.className = `event ${group.color}`;
+    article.setAttribute('data-group-label', label);
 
-      const left = document.createElement('div');
-      left.className = 'left';
-      left.textContent = label;
-      left.setAttribute('tabindex','0');
+    const left = document.createElement('div');
+    left.className = 'left';
+    left.textContent = label;
+    left.setAttribute('tabindex', '0');
 
-      const center = document.createElement('div');
-      center.className = 'center';
-      center.textContent = group.items[0].title || '';
+    const center = document.createElement('div');
+    center.className = 'center';
+    center.textContent = group.items[0].title || '';
 
-      const right = document.createElement('div');
-      right.className = 'right';
-      right.innerHTML = '<span class="arrow" aria-hidden="true"></span>';
+    const right = document.createElement('div');
+    right.className = 'right';
+    right.innerHTML = '<span class="arrow" aria-hidden="true"></span>';
 
-      article.appendChild(left);
-      article.appendChild(center);
-      article.appendChild(right);
+    article.appendChild(left);
+    article.appendChild(center);
+    article.appendChild(right);
 
-      const details = document.createElement('div');
-      details.className = 'details';
-      details.style.display = 'none';
-      group.items.forEach(it=>{
-        const item = document.createElement('div');
-        item.className = 'd-item';
-        const t = document.createElement('div');
-        t.className = 'title';
-        t.textContent = it.title;
-        item.appendChild(t);
-        details.appendChild(item);
-      });
-      article.appendChild(details);
+    const details = document.createElement('div');
+    details.className = 'details';
+    details.style.display = 'none';
 
-      function toggle(){
-        const open = article.classList.toggle('expanded');
-        // when expanded, move focus into the first actionable control if available
-        if(open){
-          const focusable = article.querySelector('.details button, .details [tabindex], .details .d-item');
-          if(focusable && typeof focusable.focus === 'function') focusable.focus();
+    group.items.forEach(it => {
+  const item = document.createElement('div');
+  item.className = 'd-item';
+
+  // make the row a flexbox
+  item.style.display = 'flex';
+  item.style.alignItems = 'center';
+  item.style.width = '100%';
+  item.style.gap = '12px';
+
+  // store info for edit/delete
+  item.dataset.id = it.id;
+  item.dataset.title = it.title;
+  item.dataset.description = it.description || '';
+
+  // LEFT: invisible spacer to balance the buttons on the right
+  const spacer = document.createElement('div');
+  spacer.style.flex = '1';
+  item.appendChild(spacer);
+
+  // MIDDLE: description
+  const d = document.createElement('div');
+  d.className = 'description';
+  d.textContent = it.description || '';
+  // no flex here – we want it in the middle between spacer + controls
+  d.style.textAlign = 'center';
+  item.appendChild(d);
+
+  // RIGHT: buttons will be appended later in renderGroupedWithActions
+  details.appendChild(item);
+});
+
+    article.appendChild(details);
+
+    function toggle(){
+      const open = article.classList.toggle('expanded');
+      details.style.display = open ? 'block' : 'none';
+      if(open){
+        const focusable = article.querySelector(
+          '.details button, .details [tabindex], .details .d-item'
+        );
+        if(focusable && typeof focusable.focus === 'function'){
+          focusable.focus();
         }
       }
-      left.addEventListener('click', toggle);
-      left.addEventListener('keydown', (ev)=>{
-        if(ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(); }
-      });
+    }
 
-      // Make the whole article clickable to toggle expand/collapse.
-      // Ignore clicks on anchors/buttons or inside details so their own handlers work.
-      article.setAttribute('tabindex', '0');
-      article.addEventListener('click', (ev)=>{
-        const t = ev.target;
-        const tag = t && t.tagName && t.tagName.toLowerCase();
-        if(tag === 'a' || tag === 'button' || (t.closest && t.closest('.details'))) return;
+    left.addEventListener('click', toggle);
+    left.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter' || ev.key === ' '){
+        ev.preventDefault();
         toggle();
-      });
-      article.addEventListener('keydown', (ev)=>{
-        if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); }
-      });
-
-      container.appendChild(article);
+      }
     });
-  }
 
-  // Read API base from meta tag if present (set this in the deployed index.html on Vercel)
+    article.setAttribute('tabindex', '0');
+    article.addEventListener('click', (ev)=>{
+      const t = ev.target;
+      const tag = t && t.tagName && t.tagName.toLowerCase();
+      if(tag === 'a' || tag === 'button' || (t.closest && t.closest('.details')))
+        return;
+      toggle();
+    });
+    article.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter' || ev.key === ' '){
+        ev.preventDefault();
+        toggle();
+      }
+    });
+
+    container.appendChild(article);
+  });
+}
+
+  // ---------- API base detection ----------
   (function(){
     try{
       const meta = document.querySelector('meta[name="api-base"]');
-      if(meta && meta.content && meta.content.trim()) window.__API_BASE__ = meta.content.trim();
+      if(meta && meta.content && meta.content.trim()) {
+        window.__API_BASE__ = meta.content.trim();
+      }
     }catch(e){}
   })();
 
-  // Try to load events from backend; fallback to reading inline DOM events if backend unavailable
-  async function loadAndRender(){
-    // API base is configurable at runtime by setting `window.__API_BASE__` from your host (Vercel)
-    // Fallbacks: localhost for local dev, otherwise assume production backend will be set by you.
-    const API = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
-    try{
-      const resp = await fetch(API + '/api/events');
-      if(!resp.ok) throw new Error('bad response');
-      const events = await resp.json();
-      // assign color classes deterministically by weekday index if not provided
-      const colored = events.map((e,i)=> Object.assign({}, e, { color: e.color || ['e-red','e-green','e-blue','e-pink','e-orange'][i % 5] }));
-      renderGrouped(colored);
-      if(__eventsContainer) __eventsContainer.style.visibility = 'visible';
-      return;
-    }catch(err){
-      // fallback: read existing DOM source events (use their data-date and center text)
-      const sourceEvents = Array.from(document.querySelectorAll('.event')).map((el,i)=>({
-        id: el.getAttribute('data-id') || ('dom-'+i),
-        title: (el.querySelector('.center') || {}).textContent || '',
-        date: el.getAttribute('data-date') || el.getAttribute('data-date') || '',
-        color: Array.from(el.classList).find(c=>c.startsWith('e-')) || 'e-red'
-      }));
-      // merge with any localStorage events (unsynced)
-      const local = loadLocalEvents();
-      const merged = local.concat(sourceEvents);
-      renderGrouped(merged);
-      if(__eventsContainer) __eventsContainer.style.visibility = 'visible';
-      return;
+  function getApiBase() {
+    // if meta tag or window.__API_BASE__ is set, use that
+    if (window.__API_BASE__ && String(window.__API_BASE__).trim()) {
+      return String(window.__API_BASE__).trim();
     }
+
+    const proto = window.location.protocol;
+    const host = window.location.hostname;
+
+    // If you're opening the file directly (file:///...), force localhost backend
+    if (proto.startsWith('file')) {
+      return 'http://localhost:3000';
+    }
+
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:3000';
+    }
+
+    return proto + '//' + window.location.host;
   }
 
-  // ---------- localStorage helpers ----------
+  // ---------- backend/localStorage integration ----------
   const LS_KEY = 'se2200_events_v1';
+
   function loadLocalEvents(){
     try{
       const raw = localStorage.getItem(LS_KEY);
@@ -205,24 +242,57 @@ if (!localStorage.getItem("token")) {
       return JSON.parse(raw);
     }catch(e){ return []; }
   }
+
   function saveLocalEvents(events){
     localStorage.setItem(LS_KEY, JSON.stringify(events));
   }
 
-  // Create or update event: try backend, fall back to localStorage
+  async function loadAndRender(){
+    const API = getApiBase();
+    try{
+      const resp = await fetch(API + '/api/events');
+      if(!resp.ok) throw new Error('bad response');
+      const events = await resp.json();
+      const colored = events.map((e,i)=> Object.assign({}, e, {
+        color: e.color || ['e-red','e-green','e-blue','e-pink','e-orange'][i % 5]
+      }));
+      renderGrouped(colored);
+      if(__eventsContainer) __eventsContainer.style.visibility = 'visible';
+      return;
+    }catch(err){
+      // fallback: use inline DOM + localStorage
+      const sourceEvents = Array.from(document.querySelectorAll('.event')).map((el,i)=>({
+        id: el.getAttribute('data-id') || ('dom-'+i),
+        title: (el.querySelector('.center') || {}).textContent || '',
+        date: el.getAttribute('data-date') || '',
+        color: Array.from(el.classList).find(c=>c.startsWith('e-')) || 'e-red'
+      }));
+      const local = loadLocalEvents();
+      const merged = local.concat(sourceEvents);
+      renderGrouped(merged);
+      if(__eventsContainer) __eventsContainer.style.visibility = 'visible';
+    }
+  }
+
   async function saveEvent(event){
-    const API = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
+    const API = getApiBase();
     try{
       if(event.id && !String(event.id).startsWith('dom-')){
-        // update
-        const resp = await fetch(API + '/api/events/' + event.id, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(event)});
+        const resp = await fetch(API + '/api/events/' + event.id, {
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(event)
+        });
         if(!resp.ok) throw new Error('bad update');
         const updated = await resp.json();
         await loadAndRender();
         return updated;
       } else {
-        // create
-        const resp = await fetch(API + '/api/events', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(event)});
+        const resp = await fetch(API + '/api/events', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(event)
+        });
         if(!resp.ok) throw new Error('bad create');
         const created = await resp.json();
         await loadAndRender();
@@ -232,7 +302,6 @@ if (!localStorage.getItem("token")) {
       // local fallback
       const local = loadLocalEvents();
       if(event.id){
-        // update local item
         const idx = local.findIndex(x=>x.id === event.id);
         if(idx >= 0) local[idx] = event;
         else local.push(event);
@@ -241,19 +310,13 @@ if (!localStorage.getItem("token")) {
         local.push(event);
       }
       saveLocalEvents(local);
-      renderGrouped(local.concat(Array.from(document.querySelectorAll('.event')).map((el,i)=>({
-        id: el.getAttribute('data-id') || ('dom-'+i),
-        title: (el.querySelector('.center') || {}).textContent || '',
-        date: el.getAttribute('data-date') || '',
-        color: Array.from(el.classList).find(c=>c.startsWith('e-')) || 'e-red'
-      }))));
+      renderGrouped(local);
       return event;
     }
   }
 
-  // Delete event: try backend, fall back to localStorage
   async function deleteEventById(id){
-    const API = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
+    const API = getApiBase();
     try{
       if(!id) return;
       if(!String(id).startsWith('dom-')){
@@ -262,7 +325,6 @@ if (!localStorage.getItem("token")) {
         await loadAndRender();
         return true;
       } else {
-        // local id: delete from localStorage
         const local = loadLocalEvents();
         const remaining = local.filter(e=> e.id !== id);
         saveLocalEvents(remaining);
@@ -270,7 +332,6 @@ if (!localStorage.getItem("token")) {
         return true;
       }
     }catch(err){
-      // fallback: remove from localStorage
       const local = loadLocalEvents();
       const remaining = local.filter(e=> e.id !== id);
       saveLocalEvents(remaining);
@@ -295,7 +356,7 @@ if (!localStorage.getItem("token")) {
       formTitle.textContent = 'Edit Event';
       editingId = edit.id;
       form.querySelector('[name="title"]').value = edit.title || '';
-      form.querySelector('[name="date"]').value = edit.date || edit.dateTime && edit.dateTime.split('T')[0] || '';
+      form.querySelector('[name="date"]').value = edit.date || (edit.dateTime && edit.dateTime.split('T')[0]) || '';
       form.querySelector('[name="time"]').value = edit.time || '';
       form.querySelector('[name="duration"]').value = edit.duration || '';
       form.querySelector('[name="reminderMinutes"]').value = edit.reminderMinutes || '';
@@ -330,76 +391,72 @@ if (!localStorage.getItem("token")) {
     closeForm();
   });
 
-  // Enhance details with edit/delete buttons when rendering
-  const originalRenderGrouped = renderGrouped;
-  function renderGroupedWithActions(events){
-    originalRenderGrouped(events);
-    // attach edit/delete to each details item
-    document.querySelectorAll('.event').forEach(article=>{
-      const details = article.querySelector('.details');
-      if(!details) return;
-      // append controls area if not present
-      if(!article.querySelector('.details-controls')){
-        const controls = document.createElement('div');
-        controls.className = 'details-controls';
-        controls.style.display = 'flex';
-        controls.style.gap = '8px';
-        controls.style.marginTop = '8px';
-        const firstItem = details.querySelector('.d-item');
-        // create per-item edit/delete buttons
-        Array.from(details.querySelectorAll('.d-item')).forEach((di, idx)=>{
-          const rowControls = document.createElement('div');
-          rowControls.style.marginLeft = 'auto';
-          const editBtn = document.createElement('button');
-          editBtn.className = 'btn';
-          editBtn.textContent = 'Edit';
-          const deleteBtn = document.createElement('button');
-          deleteBtn.className = 'btn muted';
-          deleteBtn.textContent = 'Delete';
-          rowControls.appendChild(editBtn);
-          rowControls.appendChild(deleteBtn);
-          di.appendChild(rowControls);
+  // ---------- Enhance details with edit/delete buttons ----------
+const originalRenderGrouped = renderGrouped;
 
-          editBtn.addEventListener('click', async ()=>{
-            // build event object from d-item text and article label
-            const label = article.getAttribute('data-group-label');
-            const title = di.querySelector('.title').textContent;
-            // try to find matching event in local storage or via backend by title+label
-            // For simplicity, open form prefilled with title and date derived from label
-            const dateGuess = article.getAttribute('data-group-label') === label ? '' : '';
-            openForm({ id: null, title, date: '' });
-          });
+function renderGroupedWithActions(events){
+  // first render the grouped cards
+  originalRenderGrouped(events);
 
-          deleteBtn.addEventListener('click', async ()=>{
-            // For now, attempt to delete by matching title and label from local storage
-            const title = di.querySelector('.title').textContent;
-            // find candidate in local storage
-            const local = loadLocalEvents();
-            const candidate = local.find(e=> e.title === title);
-            if(candidate){
-              await deleteEventById(candidate.id);
-            } else {
-              // no local candidate: ask backend to delete by searching events
-              try{
-                const base = (window.__API_BASE__ && String(window.__API_BASE__).trim()) || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : (window.location.protocol + '//' + window.location.host));
-                const resp = await fetch(base + '/api/events');
-                const all = await resp.json();
-                const match = all.find(e=> e.title === title);
-                if(match) await deleteEventById(match.id);
-                else alert('Unable to find matching event to delete');
-              }catch(e){
-                alert('Delete failed');
-              }
-            }
-          });
-        });
-      }
+  // then add Edit/Delete buttons to each detail row
+  document.querySelectorAll('.event').forEach(article => {
+    const details = article.querySelector('.details');
+    if (!details) return;
+
+    Array.from(details.querySelectorAll('.d-item')).forEach(di => {
+      // avoid duplicating buttons on re-render
+      if (di.querySelector('button')) return;
+
+      const rowControls = document.createElement('div');
+// make controls live on the right side of the row
+      rowControls.style.display = 'flex';
+      rowControls.style.flex = '1';
+      rowControls.style.justifyContent = 'flex-end';
+      rowControls.style.gap = '8px';
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn';
+      editBtn.textContent = 'Edit';
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn muted';
+      deleteBtn.textContent = 'Delete';
+
+      rowControls.appendChild(editBtn);
+      rowControls.appendChild(deleteBtn);
+      di.appendChild(rowControls);
+
+      // Edit: use the stored title/description
+      editBtn.addEventListener('click', () => {
+        const id = di.dataset.id || null;
+        const title = di.dataset.title || '';
+        const description = di.dataset.description || '';
+        openForm({ id, title, description });
+      });
+
+      // Delete: delete directly by id
+      deleteBtn.addEventListener('click', async () => {
+        const id = di.dataset.id;
+        if (!id) {
+          alert('Unable to find matching event to delete');
+          return;
+        }
+        await deleteEventById(id);
+      });
     });
-  }
+  });
+}
+
+// swap in enhanced renderer
+renderGrouped = renderGroupedWithActions;
+
 
   // swap in enhanced renderer
   renderGrouped = renderGroupedWithActions;
 
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadAndRender);
-  else loadAndRender();
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', loadAndRender);
+  } else {
+    loadAndRender();
+  }
 })();

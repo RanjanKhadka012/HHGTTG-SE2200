@@ -251,6 +251,7 @@ body,
 
 /* Title (center) – directly under date */
 .event.expanded .center {
+    text-decoration: underline;
     margin-bottom: 125px;          /* small gap before the details/arrow */
 }
 
@@ -431,4 +432,60 @@ vvv Change this to re-do "pill" layout vvv
 .create-page .form-actions .btn.muted {
     background: #eee;
     color: #222;
+}
+
+/* Allow the event header row + details to wrap onto a second line,
+   and align everything from the TOP of the card. */
+.event {
+  flex-wrap: wrap;
+  align-items: flex-start;   /* push rows to the top of the pink card */
+}
+
+/* Details is a full-width row under the header */
+.event .details {
+  flex-basis: 100%;
+  margin-top: 32px;          /* <-- slide this up/down to taste */
+  display: flex;
+  justify-content: center;   /* center the inner content horizontally */
+}
+
+/* Stack description over buttons and center them */
+.event .details .d-item {
+  display: flex;
+  flex-direction: column;    /* description on top, buttons below */
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Center description text itself */
+.event .details .description {
+  text-align: center;
+  font-family: 'Fredoka One', 'Montserrat', sans-serif;
+  font-weight: 600;
+}
+
+/* Let us position the details relative to each event card */
+.event {
+  position: relative;
+}
+
+/* Position the expanded content (description + buttons)
+   roughly in the upper-middle of the pink card. */
+.event .details {
+  position: absolute;
+  top: 50%;              /* <-- move this up/down to taste (45–60%) */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  margin-top: 0;         /* override earlier margins */
+  text-align: center;    /* center text & buttons horizontally */
+}
+
+/* Stack description over the buttons and center them */
+.event .details .d-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }

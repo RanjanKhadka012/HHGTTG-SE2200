@@ -2,17 +2,7 @@
   // If this is the user's first time visiting the index page in this browser
   // session, redirect to the login page after 3 seconds. We use sessionStorage
   // so the redirect happens only once per browser session.
-  try{
-    const visitKey = 'se2200_seen_index_v1';
-    const isIndex = location.pathname === '/' || location.pathname.endsWith('/index.html');
-    if(isIndex && !sessionStorage.getItem(visitKey)){
-      // mark as seen so subsequent navigations in this session won't redirect
-      sessionStorage.setItem(visitKey, '1');
-      setTimeout(()=>{ 
-        try{ location.href = 'login.html'; }catch(e){} 
-      }, 3000);
-    }
-  }catch(e){ /* ignore sessionStorage errors */ }
+  
 
   // Redirect to login page if no token (only on index page)
   try{
@@ -70,6 +60,23 @@
     return formatShortDate(d);
   }
 
+    // ---------- time format helper (24h -> 12h with AM/PM) ----------
+  function formatTime12h(t) {
+    if (!t) return '';
+    // accept "HH:MM" or "HH:MM:SS"
+    const parts = String(t).split(':');
+    let h = parseInt(parts[0], 10);
+    let m = parts[1] || '00';
+    if (isNaN(h)) return t; // fallback if weird
+
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+
+    return `${h}:${m.padStart(2, '0')} ${suffix}`;
+  }
+
+
   // ---------- base renderer (group events by date label) ----------
   function renderGrouped(events) {
   const groups = new Map();
@@ -124,8 +131,8 @@
     titleSpan.textContent = main.title || "";
 
     const timeSpan = document.createElement("span");
-    timeSpan.className = "event-time";
-    timeSpan.textContent = main.time ? "  •  " + main.time : "";
+    const formattedTime = formatTime12h(main.time);
+    timeSpan.textContent = formattedTime ? "  •  " + formattedTime : "";
 
     center.appendChild(titleSpan);
     center.appendChild(timeSpan);

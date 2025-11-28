@@ -148,6 +148,7 @@ body,
     transform-origin: center;
     animation: pillEnter 0.1s ease-out;               /* quick tilt-in */
     transition: transform 180ms ease, box-shadow 180ms ease;
+    position: relative;
 }
 
 
@@ -454,7 +455,7 @@ vvv Change this to re-do "pill" layout vvv
   display: flex;
   flex-direction: column;    /* description on top, buttons below */
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   width: 100%;
 }
 

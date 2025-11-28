@@ -107,6 +107,8 @@
     const article = document.createElement("article");
     article.className = `event ${group.color}`;
     article.setAttribute("data-group-label", label);
+    article.style.position = "relative";
+
 
     const left = document.createElement("div");
     left.className = "left";
@@ -152,7 +154,7 @@
       // layout: column, centered
       item.style.display = "flex";
       item.style.flexDirection = "column";
-      item.style.alignItems = "center";
+      item.style.alignItems = "stretch";
       item.style.width = "100%";
       item.style.gap = "6px";
 
@@ -176,17 +178,25 @@
     article.appendChild(details);
 
     function toggle() {
-      const open = article.classList.toggle("expanded");
-      details.style.display = open ? "block" : "none";
-      if (open) {
-        const focusable = article.querySelector(
-          ".details button, .details [tabindex], .details .d-item"
-        );
-        if (focusable && typeof focusable.focus === "function") {
-          focusable.focus();
-        }
-      }
+  const open = article.classList.toggle("expanded");
+  details.style.display = open ? "block" : "none";
+
+  // 🔽 show/hide delete button only when expanded
+  const controls = article.querySelector('.details-controls');
+  if (controls) {
+    controls.style.display = open ? 'flex' : 'none';
+  }
+
+  if (open) {
+    const focusable = article.querySelector(
+      ".details button, .details [tabindex], .details .d-item"
+    );
+    if (focusable && typeof focusable.focus === "function") {
+      focusable.focus();
     }
+  }
+}
+
 
     left.addEventListener("click", toggle);
     left.addEventListener("keydown", (ev) => {
@@ -431,32 +441,40 @@ function renderGroupedWithActions(events){
       // avoid duplicating buttons on re-render
       if (di.querySelector('button')) return;
 
-      const rowControls = document.createElement('div');
-// make controls live on the right side of the row
-      rowControls.style.display = 'flex';
-      rowControls.style.flex = '1';
-      rowControls.style.justifyContent = 'flex-end';
-      rowControls.style.gap = '8px';
+      // we’ll attach the delete button to the entire card (article),
+// but use this event’s id when deleting
+const id = di.dataset.id;
 
-      const editBtn = document.createElement('button');
-      editBtn.className = 'btn';
-      editBtn.textContent = 'Edit';
+const rowControls = document.createElement('div');
+rowControls.className = 'details-controls';
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'btn muted';
-      deleteBtn.textContent = 'Delete';
+// position at bottom-right of the whole card
+rowControls.style.position = 'absolute';
+rowControls.style.right = '40px';   // nudge from right edge
+rowControls.style.bottom = '30px';  // nudge up from bottom
+rowControls.style.display = 'none';
+rowControls.style.gap = '8px';
 
-      rowControls.appendChild(editBtn);
-      rowControls.appendChild(deleteBtn);
-      di.appendChild(rowControls);
+const deleteBtn = document.createElement('button');
+deleteBtn.className = 'btn muted';
+deleteBtn.textContent = 'Delete?';
+
+rowControls.appendChild(deleteBtn);
+
+// ⬅️ append to the *article* (the big pink card), not the .d-item
+article.appendChild(rowControls);
+
+deleteBtn.addEventListener('click', async () => {
+  if (!id) {
+    alert('Unable to find matching event to delete');
+    return;
+  }
+  await deleteEventById(id);
+});
+
 
       // Edit: use the stored title/description
-      editBtn.addEventListener('click', () => {
-        const id = di.dataset.id || null;
-        const title = di.dataset.title || '';
-        const description = di.dataset.description || '';
-        openForm({ id, title, description });
-      });
+      
 
       // Delete: delete directly by id
       deleteBtn.addEventListener('click', async () => {

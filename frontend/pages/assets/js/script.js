@@ -71,127 +71,145 @@
   }
 
   // ---------- base renderer (group events by date label) ----------
-  function renderGrouped(events){
+  function renderGrouped(events) {
   const groups = new Map();
-  events.forEach(ev => {
+
+  events.forEach((ev) => {
     const dateStr =
       ev.date ||
       ev.dataDate ||
-      (ev.dateTime && ev.dateTime.split('T')[0]) ||
-      '';
+      (ev.dateTime && ev.dateTime.split("T")[0]) ||
+      "";
     const label = computeLabelForDate(dateStr);
-    const title = ev.title || '';
-    const colorClass = ev.color || ev.colorClass || 'e-red';
+    const title = ev.title || "";
+    const colorClass = ev.color || ev.colorClass || "e-red";
 
     if (!groups.has(label)) {
       groups.set(label, { date: dateStr, items: [], color: colorClass });
     }
 
-    // store title + description so we can use them later
+    // ⬇️ keep time + description for later display
     groups.get(label).items.push({
       id: ev.id,
       title,
-      description: ev.description || '',
+      description: ev.description || "",
+      time: ev.time || "",
       date: dateStr,
-      color: colorClass
+      color: colorClass,
     });
   });
 
-  const container = document.querySelector('.events');
+  const container = document.querySelector(".events");
   if (!container) return;
-  container.innerHTML = '';
+  container.innerHTML = "";
 
   groups.forEach((group, label) => {
-    const article = document.createElement('article');
+    const article = document.createElement("article");
     article.className = `event ${group.color}`;
-    article.setAttribute('data-group-label', label);
+    article.setAttribute("data-group-label", label);
 
-    const left = document.createElement('div');
-    left.className = 'left';
+    const left = document.createElement("div");
+    left.className = "left";
     left.textContent = label;
-    left.setAttribute('tabindex', '0');
+    left.setAttribute("tabindex", "0");
 
-    const center = document.createElement('div');
-    center.className = 'center';
-    center.textContent = group.items[0].title || '';
+    const center = document.createElement("div");
+    center.className = "center";
 
-    const right = document.createElement('div');
-    right.className = 'right';
+    // ⬇️ title + time on the main card
+    const main = group.items[0];
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = main.title || "";
+
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "event-time";
+    timeSpan.textContent = main.time ? "  •  " + main.time : "";
+
+    center.appendChild(titleSpan);
+    center.appendChild(timeSpan);
+
+    const right = document.createElement("div");
+    right.className = "right";
     right.innerHTML = '<span class="arrow" aria-hidden="true"></span>';
 
     article.appendChild(left);
     article.appendChild(center);
     article.appendChild(right);
 
-    const details = document.createElement('div');
-    details.className = 'details';
-    details.style.display = 'none';
+    const details = document.createElement("div");
+    details.className = "details";
+    details.style.display = "none";
 
-    group.items.forEach(it => {
-  const item = document.createElement('div');
-  item.className = 'd-item';
+    group.items.forEach((it) => {
+      const item = document.createElement("div");
+      item.className = "d-item";
 
-  // make the row a flexbox
-  item.style.display = 'flex';
-  item.style.alignItems = 'center';
-  item.style.width = '100%';
-  item.style.gap = '12px';
+      // store info for edit/delete
+      item.dataset.id = it.id;
+      item.dataset.title = it.title;
+      item.dataset.description = it.description || "";
 
-  // store info for edit/delete
-  item.dataset.id = it.id;
-  item.dataset.title = it.title;
-  item.dataset.description = it.description || '';
+      // layout: column, centered
+      item.style.display = "flex";
+      item.style.flexDirection = "column";
+      item.style.alignItems = "center";
+      item.style.width = "100%";
+      item.style.gap = "6px";
 
-  // LEFT: invisible spacer to balance the buttons on the right
-  const spacer = document.createElement('div');
-  spacer.style.flex = '1';
-  item.appendChild(spacer);
+      // ⬇️ time inside expanded card
+      if (it.time) {
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "time";
+        item.appendChild(timeDiv);
+      }
 
-  // MIDDLE: description
-  const d = document.createElement('div');
-  d.className = 'description';
-  d.textContent = it.description || '';
-  // no flex here – we want it in the middle between spacer + controls
-  d.style.textAlign = 'center';
-  item.appendChild(d);
+      // description
+      const d = document.createElement("div");
+      d.className = "description";
+      d.textContent = it.description || "";
+      d.style.textAlign = "center";
 
-  // RIGHT: buttons will be appended later in renderGroupedWithActions
-  details.appendChild(item);
-});
+      item.appendChild(d);
+      details.appendChild(item);
+    });
 
     article.appendChild(details);
 
-    function toggle(){
-      const open = article.classList.toggle('expanded');
-      details.style.display = open ? 'block' : 'none';
-      if(open){
+    function toggle() {
+      const open = article.classList.toggle("expanded");
+      details.style.display = open ? "block" : "none";
+      if (open) {
         const focusable = article.querySelector(
-          '.details button, .details [tabindex], .details .d-item'
+          ".details button, .details [tabindex], .details .d-item"
         );
-        if(focusable && typeof focusable.focus === 'function'){
+        if (focusable && typeof focusable.focus === "function") {
           focusable.focus();
         }
       }
     }
 
-    left.addEventListener('click', toggle);
-    left.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Enter' || ev.key === ' '){
+    left.addEventListener("click", toggle);
+    left.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
         ev.preventDefault();
         toggle();
       }
     });
 
-    article.setAttribute('tabindex', '0');
-    article.addEventListener('click', (ev)=>{
+    article.setAttribute("tabindex", "0");
+    article.addEventListener("click", (ev) => {
       const t = ev.target;
       const tag = t && t.tagName && t.tagName.toLowerCase();
-      if(tag === 'a' || tag === 'button' || (t.closest && t.closest('.details')))
+      if (
+        tag === "a" ||
+        tag === "button" ||
+        (t.closest && t.closest(".details"))
+      )
         return;
       toggle();
     });
-    article.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Enter' || ev.key === ' '){
+    article.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
         ev.preventDefault();
         toggle();
       }
@@ -200,6 +218,7 @@
     container.appendChild(article);
   });
 }
+
 
   // ---------- API base detection ----------
   (function(){

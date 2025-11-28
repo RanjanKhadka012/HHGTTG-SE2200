@@ -1,7 +1,7 @@
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
-const pool = require('./src/db'); // mysql2 pool
+const pool = require('./src/db'); // mysql2 promise pool
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,7 +9,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// --- Health check ---
+/* ===================== HEALTH CHECK ===================== */
+
 app.get('/api/health', async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT 1 AS ok');
@@ -20,11 +21,10 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-//
-// -------- AUTH ROUTES (LOGIN + SIGNUP) --------
-//
+/* ===================== AUTH: SIGNUP ===================== */
+// Uses your `users` table:
+// userID, userName, password, name, email, joinedDate
 
-// SIGNUP (used by signup page if it calls /api/auth/signup)
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { username, userName, password, name, email } = req.body || {};
@@ -36,7 +36,7 @@ app.post('/api/auth/signup', async (req, res) => {
       });
     }
 
-    // Check if username already exists
+    // check if username exists
     const [existing] = await pool.execute(
       'SELECT userID FROM users WHERE userName = ?',
       [finalUsername]
@@ -57,13 +57,19 @@ app.post('/api/auth/signup', async (req, res) => {
       name: name || '',
       email
     });
-  } catch (err) {
+    } catch (err) {
     console.error('POST /api/auth/signup error:', err);
-    res.status(500).json({ message: 'Error creating user' });
+    // send the real message so signup.js can show it
+    res.status(500).json({
+      message: err.message || 'Error creating user'
+    });
   }
 });
 
-// LOGIN (called by login.js => /api/auth/login)
+/* ===================== AUTH: LOGIN ===================== */
+// login.js calls POST http://localhost:3000/api/auth/login
+// and expects: { token, user: { id, username, name, email } }
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, userName, password } = req.body || {};
@@ -73,20 +79,19 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ message: 'Missing username or password' });
     }
 
+    // Look up the user from USERS table
     const [rows] = await pool.execute(
-      `SELECT userID, userName AS username, name, email
-       FROM users
-       WHERE userName = ? AND password = ?`,
-      [finalUsername, password]
+      'SELECT userID, userName, name, email, password FROM users WHERE userName = ?',
+      [finalUsername]
     );
 
-    if (rows.length === 0) {
+    if (rows.length === 0 || rows[0].password !== password) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
     const user = rows[0];
 
-    // Fake token for prototype
+    // Fake token is fine for this project
     const token = 'fake-token-' + user.userID;
 
     return res.json({
@@ -94,7 +99,7 @@ app.post('/api/auth/login', async (req, res) => {
       token,
       user: {
         id: user.userID,
-        username: user.username,
+        username: user.userName,
         name: user.name,
         email: user.email
       }
@@ -105,9 +110,8 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-//
-// -------- OPTIONAL: simple /api/users create --------
-//
+/* ===================== OPTIONAL: /api/users CREATE ===================== */
+
 app.post('/api/users', async (req, res) => {
   try {
     const { userName, password, name, email } = req.body || {};
@@ -118,7 +122,7 @@ app.post('/api/users', async (req, res) => {
 
     const [result] = await pool.execute(
       `INSERT INTO users (userName, password, name, email)
-       VALUES (?, ?, ?, ?)` ,
+       VALUES (?, ?, ?, ?)`,
       [userName, password, name, email]
     );
 
@@ -134,9 +138,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-//
-// -------- EVENTS HELPERS --------
-//
+/* ===================== EVENTS HELPERS ===================== */
 
 function normalizeTime(t) {
   if (!t) return null;
@@ -145,15 +147,16 @@ function normalizeTime(t) {
 }
 
 function mapRowToEvent(row) {
+  // eventDate: DATE; eventTime: TIME
   let dateStr;
   if (row.eventDate instanceof Date) {
-    dateStr = row.eventDate.toISOString().slice(0, 10);
+    dateStr = row.eventDate.toISOString().slice(0, 10); // YYYY-MM-DD
   } else {
     dateStr = String(row.eventDate);
   }
 
   let timeStr = String(row.eventTime || '');
-  const shortTime = timeStr.length >= 5 ? timeStr.slice(0, 5) : timeStr;
+  const shortTime = timeStr.length >= 5 ? timeStr.slice(0, 5) : timeStr; // HH:MM
 
   const dateTimeIso = new Date(`${dateStr}T${shortTime}:00`).toISOString();
 
@@ -169,17 +172,40 @@ function mapRowToEvent(row) {
   };
 }
 
-//
-// -------- EVENTS ROUTES --------
-//
+/* ===================== EVENTS ROUTES ===================== */
+/*
+  Your DB schema (from earlier):
 
-// GET all events
+  CREATE TABLE events (
+    eventID INT AUTO_INCREMENT PRIMARY KEY,
+    userID INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    eventDate DATE NOT NULL,
+    eventTime TIME NOT NULL,
+    eventDescription VARCHAR(300),
+    Reminder TIME,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userID) REFERENCES users(userID) ON DELETE CASCADE
+  );
+*/
+
+// GET /api/events?userID=1  -> events only for that user
 app.get('/api/events', async (req, res) => {
   try {
+    const userID = req.query.userID;
+
+    if (!userID) {
+      return res
+        .status(400)
+        .json({ error: 'userID query parameter is required' });
+    }
+
     const [rows] = await pool.execute(
       `SELECT eventID, title, eventDate, eventTime, eventDescription
        FROM events
-       ORDER BY eventDate, eventTime`
+       WHERE userID = ?
+       ORDER BY eventDate, eventTime`,
+      [userID]
     );
 
     const events = rows.map(mapRowToEvent);
@@ -190,25 +216,24 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
-// CREATE event
+// CREATE event: body must include userID, title, date, time, description (optional)
 app.post('/api/events', async (req, res) => {
   try {
-    const { title, date, time, description } = req.body || {};
+    const { title, date, time, description, userID } = req.body || {};
 
-    if (!title || !date || !time) {
-      return res
-        .status(400)
-        .json({ error: 'title, date, and time are required' });
+    if (!title || !date || !time || !userID) {
+      return res.status(400).json({
+        error: 'title, date, time, and userID are required'
+      });
     }
 
-    const eventDate = date;                // 'YYYY-MM-DD'
-    const eventTime = normalizeTime(time); // 'HH:MM:SS'
-    const userID = 1; // temp / demo
+    const eventDate = date; // YYYY-MM-DD from <input type="date">
+    const eventTime = normalizeTime(time); // HH:MM:SS
 
     const [result] = await pool.execute(
       `INSERT INTO events (userID, title, eventDate, eventTime, eventDescription)
        VALUES (?, ?, ?, ?, ?)`,
-      [userID, title, eventDate, eventTime, description || null]
+      [userID, title, eventDate, eventTime, description || '']
     );
 
     const eventID = result.insertId;
@@ -218,7 +243,7 @@ app.post('/api/events', async (req, res) => {
       title,
       eventDate,
       eventTime,
-      eventDescription: description || null
+      eventDescription: description || ''
     });
 
     res.status(201).json(eventObj);
@@ -228,12 +253,13 @@ app.post('/api/events', async (req, res) => {
   }
 });
 
-// UPDATE event
+// UPDATE event by id
 app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, date, time, description } = req.body || {};
 
+    // fetch existing
     const [rows] = await pool.execute(
       `SELECT eventID, userID, title, eventDate, eventTime, eventDescription
        FROM events
@@ -275,7 +301,7 @@ app.put('/api/events/:id', async (req, res) => {
   }
 });
 
-// DELETE event
+// DELETE event by id
 app.delete('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -296,7 +322,8 @@ app.delete('/api/events/:id', async (req, res) => {
   }
 });
 
-// --- Start server ---
+/* ===================== START SERVER ===================== */
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

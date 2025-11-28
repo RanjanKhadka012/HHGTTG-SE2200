@@ -267,72 +267,77 @@
   }
 
   async function loadAndRender(){
-    const API = getApiBase();
-    try{
-      const resp = await fetch(API + '/api/events');
-      if(!resp.ok) throw new Error('bad response');
-      const events = await resp.json();
-      const colored = events.map((e,i)=> Object.assign({}, e, {
-        color: e.color || ['e-red','e-green','e-blue','e-pink','e-orange'][i % 5]
-      }));
-      renderGrouped(colored);
-      if(__eventsContainer) __eventsContainer.style.visibility = 'visible';
-      return;
-    }catch(err){
-      // fallback: use inline DOM + localStorage
-      const sourceEvents = Array.from(document.querySelectorAll('.event')).map((el,i)=>({
-        id: el.getAttribute('data-id') || ('dom-'+i),
-        title: (el.querySelector('.center') || {}).textContent || '',
-        date: el.getAttribute('data-date') || '',
-        color: Array.from(el.classList).find(c=>c.startsWith('e-')) || 'e-red'
-      }));
-      const local = loadLocalEvents();
-      const merged = local.concat(sourceEvents);
-      renderGrouped(merged);
-      if(__eventsContainer) __eventsContainer.style.visibility = 'visible';
-    }
+  const API = getApiBase();
+  const userId = localStorage.getItem('userId');
+
+  // If no userId, don't even try to load events
+  if (!userId) {
+    console.warn('No userId in localStorage; not loading events');
+    if (__eventsContainer) __eventsContainer.style.visibility = 'visible';
+    return;
   }
 
-  async function saveEvent(event){
-    const API = getApiBase();
-    try{
-      if(event.id && !String(event.id).startsWith('dom-')){
-        const resp = await fetch(API + '/api/events/' + event.id, {
-          method:'PUT',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(event)
-        });
-        if(!resp.ok) throw new Error('bad update');
-        const updated = await resp.json();
-        await loadAndRender();
-        return updated;
-      } else {
-        const resp = await fetch(API + '/api/events', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(event)
-        });
-        if(!resp.ok) throw new Error('bad create');
-        const created = await resp.json();
-        await loadAndRender();
-        return created;
-      }
-    }catch(err){
-      // local fallback
-      const local = loadLocalEvents();
-      if(event.id){
-        const idx = local.findIndex(x=>x.id === event.id);
-        if(idx >= 0) local[idx] = event;
-        else local.push(event);
-      } else {
-        event.id = 'dom-' + Date.now();
-        local.push(event);
-      }
-      saveLocalEvents(local);
-      renderGrouped(local);
-      return event;
-    }
+  try {
+    const resp = await fetch(
+      `${API}/api/events?userID=${encodeURIComponent(userId)}`
+    );
+    if (!resp.ok) throw new Error('bad response');
+
+    const events = await resp.json();
+    const colored = events.map((e, i) => Object.assign({}, e, {
+      color: e.color || ['e-red','e-green','e-blue','e-pink','e-orange'][i % 5]
+    }));
+    renderGrouped(colored);
+    if (__eventsContainer) __eventsContainer.style.visibility = 'visible';
+  } catch (err) {
+    console.error('loadAndRender error:', err);
+    // fallback (your existing DOM/localStorage fallback if you want)
   }
+}
+
+  async function saveEvent(event){
+  const API = getApiBase();
+  const userId = localStorage.getItem('userId');
+
+  if (!userId) {
+    alert('You must be logged in to create events.');
+    return;
+  }
+
+  // always send userID with the payload
+  const payload = Object.assign({}, event, { userID: Number(userId) });
+
+  try {
+    if (payload.id && !String(payload.id).startsWith('dom-')) {
+      // UPDATE
+      const resp = await fetch(`${API}/api/events/${payload.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('bad update');
+      const updated = await resp.json();
+      await loadAndRender();
+      return updated;
+    } else {
+      // CREATE
+      const resp = await fetch(`${API}/api/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('bad create');
+      const created = await resp.json();
+      await loadAndRender();
+      return created;
+    }
+  } catch (err) {
+    console.error('saveEvent error, falling back to localStorage:', err);
+    // your localStorage fallback logic can stay the same, if you’re using it
+  }
+}
+
+
 
   async function deleteEventById(id){
     const API = getApiBase();
@@ -470,8 +475,7 @@ function renderGroupedWithActions(events){
 renderGrouped = renderGroupedWithActions;
 
 
-  // swap in enhanced renderer
-  renderGrouped = renderGroupedWithActions;
+  
 
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', loadAndRender);

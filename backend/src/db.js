@@ -2,7 +2,7 @@ require('dotenv').config();
 const mysql = require('mysql2/promise');
 const pool = mysql.createPool({
   host: 'localhost',
-  user: 'root',
+  user: process.env.user,
   password: process.env.password,
   database: 'dailyPlanner'
 });
